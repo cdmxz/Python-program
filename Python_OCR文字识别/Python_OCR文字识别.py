@@ -1,6 +1,9 @@
 #-*- coding:utf-8 -*-
 
-########## 已在 python3.8 32bit 测试过，可正常使用 ##########
+'''
+已在 python3.8 32bit 测试过，可正常使用 
+请使用 pip install eyed3 windnd baidu-aip requests pygame 命令安装相应的库
+'''
 
 import os
 import sys
@@ -29,11 +32,11 @@ playMp3 = False
 mixer.init()
 
 
-# 文字识别Key
+# 文字识别Key（可以自己去百度官网申请）
 API_KEY = "YaOhBFsug5GySthCpUFtLkQk"
 SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
 
-# 语音合成Key
+# 语音合成Key（可以自己去百度官网申请）
 tts_APP_ID = "19685928"
 tts_API_KEY = "qk3y9G2FQLrQsCa9v9NzzW8h"
 tts_SECRET_KEY = "qtYsvvdEGgQ6EzxVSFuYRvl8NmzVihy1"
