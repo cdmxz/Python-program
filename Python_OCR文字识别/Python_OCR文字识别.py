@@ -448,7 +448,7 @@ filePath图片路径"
             
              # 获取当前时间，用作音频文件的文件名
             curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-            fileName = os.path.abspath('..') + '\\' + curr_time + '.xls' 
+            fileName = os.path.abspath('.') + '\\' + curr_time + '.xls' 
             return "识别进度：" + str(percent) + "%\n识别结果：" + retMsg + "\n是否下载：" + DownFile(url,fileName) + "\n下载地址：" + url
         else:
             return "识别失败！"
@@ -490,7 +490,7 @@ Spd  语速快慢"
         result = client.synthesis(Text, 'zh', 1, { 'vol': Vol,'per':Per,'spd':Spd })
         # 识别正确返回语音二进制 错误则返回dict 参照下面错误码
         if not isinstance(result, dict):
-            mp3Name = os.path.abspath('..') + '\\' + curr_time + '.mp3' 
+            mp3Name = os.path.abspath('.') + '\\' + curr_time + '.mp3' 
             with open(mp3Name, 'wb') as f: 
                 f.write(result)
         # 播放Mp3文件
