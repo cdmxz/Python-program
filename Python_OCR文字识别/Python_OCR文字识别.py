@@ -114,6 +114,7 @@ detect_dire 是否检测图片朝向"
             word = ""
             for result in r.get("words_result"):
                 word+=result["words"] + "\n" 
+
             return word.rstrip('\n') # 删除掉最后面的'\n'字符
 
     except Exception as e:
@@ -161,6 +162,7 @@ detect_dire 是否检测图片朝向"
             word = ""
             for result in r.get("words_result"):
                 word+=result["words"] + "\n"
+
             return word.rstrip('\n') # 删除掉最后面的'\n'字符
 
     except Exception as e:
@@ -207,7 +209,8 @@ filePath图片路径"
         word = ""
         for result in r.get("words_result"):
             word+=result["words"] + "\n"
-            return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        return word.rstrip('\n') # 删除掉最后面的'\n'字符
 
     except Exception as e:
             print(e)
@@ -385,7 +388,8 @@ detect_dire 是否检测图片朝向"
         word = ""
         for result in r.get("words_result"):
             word+=result["words"] + "\n"
-            return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        return word.rstrip('\n') # 删除掉最后面的'\n'字符
 
     except Exception as e:
         print(e)
