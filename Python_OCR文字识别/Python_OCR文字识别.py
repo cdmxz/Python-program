@@ -27,7 +27,7 @@ from tkinter import *    # 图形界面
 from tkinter.font import Font
 from tkinter.ttk import *
 from tkinter.messagebox import *
-#from PIL import ImageGrab # 读取剪切板
+from PIL import ImageGrab # 读取剪切板
 
 playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
 playMusic = False
