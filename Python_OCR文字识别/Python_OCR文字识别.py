@@ -27,7 +27,7 @@ from tkinter import *    # 图形界面
 from tkinter.font import Font
 from tkinter.ttk import *
 from tkinter.messagebox import *
-from PIL import ImageGrab # 读取剪切板
+#from PIL import ImageGrab # 读取剪切板
 
 playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
 playMusic = False
@@ -592,6 +592,15 @@ def Command_Start():
         tkinter.messagebox.showinfo("图片识别","请先选择文件！") # 弹出提示
         Command_SelectImage() # 调用“选择图片文件”函数
         return   
+
+    global playMusic,playSound,newThread
+
+    # 如果文字转语音正在播放，则关闭
+    if playMusic:
+        # 终止线程
+        winsound.PlaySound(playSound, winsound.SND_PURGE)
+        playMusic = False
+        newThread.join(0)
 
     if RadioVar.get() == 1: # 通用文字识别
         re = GeneralBasic(Text1_showPath_Var.get(),ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
