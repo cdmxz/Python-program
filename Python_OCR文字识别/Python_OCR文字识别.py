@@ -1,37 +1,36 @@
 #-*- coding:utf-8 -*-
-
 '''
         此为桌面GUI程序，不能在浏览器使用，请下载到电脑并安装必备的库后使用python运行环境运行。
 开源地址：https://cdmxz.github.io
 已在 python3.8 32bit 测试过，可正常使用 
-请使用 pip install eyed3 windnd baidu-aip requests pygame 命令安装相应的库
+使用前请安装必备的库：PIL windnd requests
 '''
 
 import os
 import sys
-import datetime # 获取当前时间
-import requests # HTTP库
-import base64   # base64编码解码
-import json     # 解析json数据
+import winsound  # 播放wav文件
+import wave
+import contextlib# 获取wav文件时长
+import threading
+import datetime  # 获取当前时间
+import requests  # HTTP库
+import base64    # base64编码解码
+import json      # 解析json数据
 import tkinter.messagebox # 弹窗
 import tkinter.filedialog # 打开文件对话框
 import tkinter as tk # 图形界面
-import eyed3  # 获取MP3文件时长
-import time   # 休眠
-import windnd # 文件拖动
-
+import time      # 休眠
+import windnd    # 文件拖动
+from urllib import request,parse
 from pathlib import Path # 获取当前目录
-from pygame import mixer # 播放音乐
 from tkinter import *    # 图形界面
 from tkinter.font import Font
 from tkinter.ttk import *
 from tkinter.messagebox import *
-from aip import AipSpeech # 百度Api
+#from PIL import ImageGrab # 读取剪切板
 
-
-fileName = ""
-playMp3 = False
-mixer.init()
+playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
+playMusic = False
 
 
 '''由于申请的是免费api并且多人共用，
@@ -48,15 +47,6 @@ tts_API_KEY = "qk3y9G2FQLrQsCa9v9NzzW8h"
 tts_SECRET_KEY = "qtYsvvdEGgQ6EzxVSFuYRvl8NmzVihy1"
 
 
-def DragFile(files):
-    # messagebox.showinfo("拖动的文件",f)
-    # 将选择的图片路径显示到Text_showResult控件
-    if Text1_showPath_Var.get() != "":
-        Text1_showPath.delete('0',tkinter.END)
-    Text1_showPath.insert(INSERT,files[0].decode('gbk'))
-
-
-
 def IsEmpty(Str):
     " 如果字符串的值是None或""，则返回true "
 
@@ -67,8 +57,20 @@ def IsEmpty(Str):
 
 
 def GetAccessToken():
-    "获取AccessToken"
+    "获取文字识别AccessToken"
     host = 'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + API_KEY + '&client_secret=' + SECRET_KEY
+    r = requests.get(host).json()
+    result = r.get("access_token")
+    if IsEmpty(result):
+        raise Exception(r.get("error_description"))
+    else:
+        return result
+
+
+def Get_tts_AccessToken():
+    "获取语音合成AccessToken"
+    host = 'https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + \
+tts_API_KEY + '&client_secret=' + tts_SECRET_KEY
     r = requests.get(host).json()
     result = r.get("access_token")
     if IsEmpty(result):
@@ -175,7 +177,6 @@ detect_dire 是否检测图片朝向"
         return e
 
 
-
 def Handwriting(filePath):
     "手写文字识别\n\
 filePath图片路径"
@@ -258,6 +259,7 @@ def En_statusToCh_status(EnResult):
         return "身份证欠曝（亮度过低）"
     else:
         return "其他未知情况"
+
 
 # 将返回的 英文识别身份证类型 转为中文识别身份证类型
 def En_typeToCh_type(EnType):
@@ -349,7 +351,6 @@ detect_dire    是否检测图片朝向"
     except Exception as e:
         print(e)
         return e
-
 
 
 def Numbers(filePath,detect_dire):
@@ -467,14 +468,13 @@ filePath图片路径"
 
 
 
-def GetMp3Length(filePath):
-    "获取MP3文件时长\n\
-filePath图片路径\n"
-    # 加载mp3文件
-    voice_file = eyed3.load(filePath)
-    # 获取时长
-    sec = int(voice_file.info.time_secs)
-    return sec
+def GetWavLength(WavPath):
+    "获取wav文件时长\n\
+filePath  wav路径\n"
+    with contextlib.closing(wave.open(WavPath,'r')) as f:
+        return f.getnframes() / float(f.getframerate())
+
+
 
 def Speech(Text,Vol,Per,Spd):
     "文字转语音 （只支持中英文和数字）\n\
@@ -485,35 +485,47 @@ Spd  语速快慢"
 
     try:
         # 全局变量
-        global playMp3
+        global playMusic,playSound
 
-        #如果文字为空
+        #如果Text为空
         if IsEmpty(Text):
             return  
-    
+        # 获取ttsAccessToken
+        tts_access_token = Get_tts_AccessToken()
+        if IsEmpty(tts_access_token):
+            raise Exception("获取AccessToken失败！")
+
         # 获取当前时间，用作音频文件的文件名
         curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-        # 语音合成
-        client = AipSpeech(tts_APP_ID, tts_API_KEY, tts_SECRET_KEY)
-        result = client.synthesis(Text, 'zh', 1, { 'vol': Vol,'per':Per,'spd':Spd })
-        # 识别正确返回语音二进制 错误则返回dict 参照下面错误码
-        if not isinstance(result, dict):
-            mp3Name = os.path.abspath('.') + '\\' + curr_time + '.mp3' 
-            with open(mp3Name, 'wb') as f: 
-                f.write(result)
-        # 播放Mp3文件
-        mp3Length = GetMp3Length(mp3Name)
-        mixer.music.load(mp3Name)
-        mixer.music.play()
-        playMp3 = True
-        # 休眠
-        time.sleep(mp3Length)
-        mixer.music.stop()
-        playMp3 = False
+        musicName = os.path.abspath('.') + '\\文字转语音_' + curr_time + '.wav' 
+
+        # 将需要合成的文字做2次urlencode编码
+        tex = parse.quote_plus(Text)
+        params = {'tok':tts_access_token,'tex':tex,'per':Per,'spd':Spd,'pit':5,'vol':Vol,'aue':6,'cuid':"test",'lan':'zh','ctp':1}  
+        # 将参数进行urlencode编码
+        data = parse.urlencode(params)
+        req = request.Request("http://tsn.baidu.com/text2audio", data.encode('utf-8'))
+        # 发送post请求
+        f = request.urlopen(req)
+        result = f.read()
+        # 将返回的header信息取出并生成一个字典
+        headers = dict((name.lower(), value) for name, value in f.headers.items())
+        # 如果返回的header含有“Content-Type: audio/wav”，则成功
+        if "audio/wav" == headers['content-type']:
+            with open(musicName, 'wb') as of:
+                of.write(result)
+            # 播放wav文件
+            playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
+            playMusic = True
+            sec = float(GetWavLength(musicName))
+            # 休眠
+            time.sleep(sec)
+            playMusic = False
+        else:
+            raise Exception("语音合成失败！")
 
     except Exception as e:
-        mixer.music.stop()
-        playMp3 = False
+        playMusic = False
         messagebox.showerror("语音播放错误","Error:\n" + e.args[0])
 
 
@@ -545,27 +557,32 @@ def ChToEn(Lang):
 
 # 将发音人名称转为数字
 def InformantToNumber(informant):
-    if informant == "女声":
-        return 0
-    elif informant == "男声":
+    if informant == "度小宇":
         return 1
+    elif informant == "度小美":
+        return 0
     elif informant == "度逍遥":
         return 3
     elif informant == "度丫丫":
         return 4
 
 
+newThread = threading.Thread(target=Speech)
 
 def Command_Play():
     "文字转语音"
-    global playMp3 # 全局变量
+    global playMusic,playSound,newThread
 
-    if not playMp3:
-        Speech(Text2_showResult.get('0.0', 'end').rstrip('\n'),Slider2.get(),InformantToNumber(ComboBox3_informant.get()),Slider1.get())
+    if not playMusic:
+        # 创建一个新线程
+        newThread = threading.Thread(target=Speech, args=(Text2_showResult.get('0.0', 'end').rstrip('\n'),Slider2.get(),InformantToNumber(ComboBox3_informant.get()),Slider1.get()))
+        newThread.start()
     else:
-        mixer.music.stop()
-        playMp3 = False
-
+        # 终止线程
+        winsound.PlaySound(playSound, winsound.SND_PURGE)
+        playMusic = False
+        newThread.join(0)
+        
 
 
 def Command_Start():
@@ -617,6 +634,49 @@ def Command_SelectImage():
 
 
 
+# 剪切
+def Cut(editor, event=None):
+    editor.event_generate("<<Cut>>")
+# 复制
+def Copy(editor, event=None):
+    editor.event_generate("<<Copy>>")
+# 粘贴
+def Paste(editor, event=None):
+    editor.event_generate('<<Paste>>')
+# 鼠标右键菜单栏
+def MouseRightKey(event, editor):
+    menubar.delete(0,END)
+    menubar.add_command(label='剪切',command=lambda:Cut(editor))
+    menubar.add_command(label='复制',command=lambda:Copy(editor))
+    menubar.add_command(label='粘贴',command=lambda:Paste(editor))
+    menubar.post(event.x_root,event.y_root)
+
+# 保存剪切板的图片
+def SavePicture():
+    im = ImageGrab.grabclipboard()
+    # 如果im=None则说明剪切板没有图片
+    if im == None:
+        return
+    # 获取当前时间，用于保存文件时当作文件名
+    curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
+    pictureName = os.path.abspath('.') + '\\剪切板图片_' + curr_time + '.png'
+    # 保存剪切板的图片
+    im.save(pictureName, 'PNG')
+    print(pictureName)
+    # 将保存的图片路径显示到Text1_showPath
+    if Text1_showPath_Var.get() != "":
+        Text1_showPath.delete('0', tkinter.END)
+    Text1_showPath.insert(INSERT, pictureName)
+
+
+# 拖动文件
+def DragFile(files):
+    # messagebox.showinfo("拖动的文件",f)
+    # 将选择的图片路径显示到Text_showResult控件
+    if Text1_showPath_Var.get() != "":
+        Text1_showPath.delete('0',tkinter.END)
+    Text1_showPath.insert(INSERT,files[0].decode('gbk'))
+
 ############################ 以下为界面设计代码 ###################################
 if __name__ == "__main__":    
     window = tk.Tk()
@@ -633,6 +693,10 @@ if __name__ == "__main__":
     top = window.winfo_toplevel()
     style = Style()
 
+    # menu
+    # 菜单
+    menubar = Menu(window, tearoff=False)
+
     # Slider
 
     # 音量滑动条
@@ -641,7 +705,7 @@ if __name__ == "__main__":
     Slider2.set(7)
 
     # 发音语速滑动条
-    Slider1 = Scale(top, orient='horizontal', from_=0, to=9)
+    Slider1 = Scale(top, orient='horizontal', from_=0, to=15)
     Slider1.place(relx=0.479, rely=0.238, relwidth=0.118, relheight=0.098)
     Slider1.set(5)
 
@@ -666,10 +730,10 @@ if __name__ == "__main__":
     ComboBox2.set(ComboBox2List[0])
 
     # 发音人
-    ComboBox3_informant_List = ['女声','男声','度逍遥','度丫丫']
+    ComboBox3_informant_List = ['度小宇','度小美','度逍遥','度丫丫']
     ComboBox3_informant = Combobox(top, state='readonly', values=ComboBox3_informant_List, font=('微软雅黑',10))
     ComboBox3_informant.place(relx=0.78, rely=0.238, relwidth=0.1, relheight=0.08)
-    ComboBox3_informant.set(ComboBox3_informant_List[1])
+    ComboBox3_informant.set(ComboBox3_informant_List[0])
 
     # RadioButton
 
@@ -738,10 +802,16 @@ if __name__ == "__main__":
     Text1_showPath_Var = StringVar(value='请先选择路径')
     Text1_showPath = Entry(top, text='请先选择路径', textvariable=Text1_showPath_Var, font=('微软雅黑',9))
     Text1_showPath.place(relx=0.129, rely=0.024, relwidth=0.623, relheight=0.074)
+    # 绑定鼠标右键事件
+    Text1_showPath.bind("<Button-3>", lambda x: MouseRightKey(x, Text1_showPath)) 
+    Text1_showPath.bind("<Control-v>",lambda x: SavePicture())
 
     # 显示识别结果
     Text2_showResult = Text(top, font=('微软雅黑',10))
     Text2_showResult.place(relx=0., rely=0.357, relwidth=0.998, relheight=0.646)
+    # 绑定鼠标右键事件
+    Text2_showResult.bind("<Button-3>", lambda x: MouseRightKey(x, Text2_showResult)) 
+    Text2_showResult.bind("<Control-v>", lambda x: SavePicture())
 
     # label
     style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
@@ -755,7 +825,6 @@ if __name__ == "__main__":
     style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
     Label3 = Label(top, text='图片路径：', style='Label1.TLabel')
     Label3.place(relx=0.013, rely=0.024, relwidth=0.105, relheight=0.051)
-
 
     # 显示窗口
     window.mainloop()
