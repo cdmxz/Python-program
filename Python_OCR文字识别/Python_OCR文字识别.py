@@ -1,6 +1,8 @@
 #-*- coding:utf-8 -*-
 
 '''
+        此为桌面GUI程序，不能在浏览器使用，请下载到电脑并安装必备的库后使用python运行环境运行。
+开源地址：https://cdmxz.github.io
 已在 python3.8 32bit 测试过，可正常使用 
 请使用 pip install eyed3 windnd baidu-aip requests pygame 命令安装相应的库
 '''
@@ -32,6 +34,10 @@ playMp3 = False
 mixer.init()
 
 
+'''由于申请的是免费api并且多人共用，
+可能会出现识别失败的情况，
+推荐自己去百度ai开放平台（https://ai.baidu.com/tech/ocr/general）申请api。
+'''
 # 文字识别Key（可以自己去百度官网申请）
 API_KEY = "YaOhBFsug5GySthCpUFtLkQk"
 SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
@@ -46,15 +52,15 @@ def DragFile(files):
     # messagebox.showinfo("拖动的文件",f)
     # 将选择的图片路径显示到Text_showResult控件
     if Text1_showPath_Var.get() != "":
-         Text1_showPath.delete('0',tkinter.END)
+        Text1_showPath.delete('0',tkinter.END)
     Text1_showPath.insert(INSERT,files[0].decode('gbk'))
 
 
 
-def IsEmpty(str):
+def IsEmpty(Str):
     " 如果字符串的值是None或""，则返回true "
 
-    if str == None or str == "":
+    if Str == None or Str == "":
         return True
     else:
         return False
@@ -62,7 +68,6 @@ def IsEmpty(str):
 
 def GetAccessToken():
     "获取AccessToken"
-   
     host = 'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + API_KEY + '&client_secret=' + SECRET_KEY
     r = requests.get(host).json()
     result = r.get("access_token")
@@ -232,7 +237,7 @@ def GetIdcard_number_type(number):
     elif number == 4:
         return "身份证证号和性别信息不一致"
     else:
-         return "未知"
+        return "未知"
 
 
 # 将返回的 英文识别状态 转换为 中文识别状态
@@ -253,7 +258,7 @@ def En_statusToCh_status(EnResult):
         return "身份证欠曝（亮度过低）"
     else:
         return "其他未知情况"
-   
+
 # 将返回的 英文识别身份证类型 转为中文识别身份证类型
 def En_typeToCh_type(EnType):
     if EnType == "normal":
@@ -312,22 +317,21 @@ detect_dire    是否检测图片朝向"
             raise Exception(r.get("error_msg"))
 
 
-        edit,status,type,word = "","","",""
-        #edit,status,type,re,name,gender,nation,birth,number,address,word =
-        #"","","","","","","","","","",""
+        edit,status,Type,word = "","","",""
         if r.get("edit_tool") != None:
             edit = "\n编辑软件名称：" + r.get("edit_tool")
         
         if r.get("image_status") != None:
             status = r.get("image_status")
         if r.get("risk_type") != None:
-            type = r.get("risk_type")
+            Type = r.get("risk_type")
         
 
         word = "识别状态：" + En_statusToCh_status(status) + \
-        "\n身份证类型：" + En_typeToCh_type(type) + edit
+        "\n身份证类型：" + En_typeToCh_type(Type) + edit
 
-        if id_card_side == "front":
+        
+        if id_card_side == "front": # 身份证照片面
             word +="\n身份证号码、性别、出生是否一致：" + GetIdcard_number_type(r.get("idcard_number_type")) + \
             "\n姓名：" + r["words_result"]["姓名"]["words"] + \
             "\n性别：" + r["words_result"]["性别"]["words"] + \
@@ -335,8 +339,8 @@ detect_dire    是否检测图片朝向"
             "\n出生：" + r["words_result"]["出生"]["words"] + \
             "\n身份证号码：" + r["words_result"]["公民身份号码"]["words"] + \
             "\n住址：" + r["words_result"]["住址"]["words"]
-        else:
-            word+="\n签发日期：" + r["words_result"]["签发日期"]["words"] + \
+        else:                       # 身份证国徽面
+            word += "\n签发日期：" + r["words_result"]["签发日期"]["words"] + \
             "\n失效日期：" + r["words_result"]["失效日期"]["words"] + \
             "\n签发机关：" + r["words_result"]["签发机关"]["words"]
 
@@ -445,12 +449,12 @@ filePath图片路径"
             # 如果返回的json数据有“error_msg”
             if r.get("error_msg") != None:
                 raise Exception(r.get("error_msg"))
-  
+
             url = r['result']['result_data']
             percent = r['result']['percent']
             retMsg = r['result']['ret_msg']
             
-             # 获取当前时间，用作音频文件的文件名
+            # 获取当前时间，用作音频文件的文件名
             curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
             fileName = os.path.abspath('.') + '\\' + curr_time + '.xls' 
             return "识别进度：" + str(percent) + "%\n识别结果：" + retMsg + "\n是否下载：" + DownFile(url,fileName) + "\n下载地址：" + url
@@ -520,7 +524,7 @@ def ChToEn(Lang):
     elif Lang == "英文":
         return "ENG"
     if Lang == "葡萄牙语":
-         return "POR"
+        return "POR"
     elif Lang == "法语":
         return "FRE"
     if Lang == "德语":
@@ -536,7 +540,7 @@ def ChToEn(Lang):
     elif Lang == "韩语":
         return "KOR"
     else:
-       return "CHN_ENG"
+        return "CHN_ENG"
 
 
 # 将发音人名称转为数字
@@ -602,7 +606,7 @@ def Command_SelectImage():
         # 打开文件对话框
         fileName = tkinter.filedialog.askopenfilename(filetypes=[("jpg、png、bmp、webp、jpeg、tiff、pnm","*.jpg;*.png;*.bmp;*.webp;*.jpeg;*.tiff;*.pnm")])
         #print(fileName)
-       
+    
         if fileName == "": # 如果未选择文件
             return 
         # 否则将选择的图片路径显示到Text_showResult控件
@@ -655,7 +659,7 @@ if __name__ == "__main__":
     ComboBox1_lang.place(relx=0.013, rely=0.238, relwidth=0.12, relheight=0.08) # relx=0.013, rely=0.238, relwidth=0.105（0.209）, relheight=0.08
     ComboBox1_lang.set(ComboBox1_lang_List[0])
 
-     # 选择身份证正反面
+    # 选择身份证正反面
     ComboBox2List = ['照片面','国徽面']
     ComboBox2 = Combobox(top, state='readonly',values=ComboBox2List, font=('微软雅黑',10))
     ComboBox2.place(relx=0.14, rely=0.238, relwidth=0.10, relheight=0.08) # relx=0.129, rely=0.238, relwidth=0.105, relheight=0.08
@@ -706,7 +710,7 @@ if __name__ == "__main__":
     #RadioButton5.place(relx=0.854, rely=0.143, relwidth=0.131,
     #relheight=0.074)
 
-     # 表格识别单选按钮
+    # 表格识别单选按钮
     style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
     RadioButton5 = Radiobutton(top, text='表格文字识别',variable=RadioVar, value=6, style='Option1.TRadiobutton')
     RadioButton5.place(relx=0.847, rely=0.143, relwidth=0.157, relheight=0.074)
