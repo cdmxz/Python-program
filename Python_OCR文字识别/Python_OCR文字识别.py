@@ -652,6 +652,7 @@ def Copy(editor, event=None):
 # 粘贴
 def Paste(editor, event=None):
     editor.event_generate('<<Paste>>')
+    SavePicture()
 # 鼠标右键菜单栏
 def MouseRightKey(event, editor):
     menubar.delete(0,END)
