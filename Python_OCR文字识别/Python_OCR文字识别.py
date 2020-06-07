@@ -1,9 +1,9 @@
 #-*- coding:utf-8 -*-
 '''
-        此为桌面GUI程序，不能在浏览器使用，请下载到电脑并安装必备的库后使用python运行环境运行。
+        此为桌面GUI程序，不能在浏览器使用，请下载到电脑并安装必备的库后使用海归编辑器运行。
 开源地址：https://cdmxz.github.io
 已在 python3.8 32bit 测试过，可正常使用 
-使用前请安装必备的库：PIL windnd requests
+使用前请安装必备的库：PIL、windnd、requests
 '''
 
 import os
@@ -11,23 +11,23 @@ import sys
 import winsound  # 播放wav文件
 import wave
 import contextlib# 获取wav文件时长
-import threading
+import threading # 多线程
 import datetime  # 获取当前时间
 import requests  # HTTP库
 import base64    # base64编码解码
 import json      # 解析json数据
 import tkinter.messagebox # 弹窗
-import tkinter.filedialog # 打开文件对话框
+import tkinter.filedialog # 选择文件对话框
 import tkinter as tk # 图形界面
 import time      # 休眠
 import windnd    # 文件拖动
-from urllib import request,parse
+
+from urllib  import request,parse
 from pathlib import Path # 获取当前目录
 from tkinter import *    # 图形界面
-from tkinter.font import Font
 from tkinter.ttk import *
-from tkinter.messagebox import *
 from PIL import ImageGrab # 读取剪切板
+
 
 playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
 playMusic = False
@@ -87,6 +87,10 @@ lang_type   要识别的语言类型\n\
 detect_dire 是否检测图片朝向"
 
     try:
+        if detect_dire == '0':
+            detect_dire = 'false'
+        else:
+            detect_dire = 'true'
     # 如果有一项参数为空
         if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
             raise Exception("输入参数不正确！")
@@ -136,6 +140,10 @@ lang_type   要识别的语言类型\n\
 detect_dire 是否检测图片朝向"
 
     try:
+        if detect_dire == '0':
+            detect_dire = 'false'
+        else:
+            detect_dire = 'true'
         # 如果有一项参数为空
         if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
             raise Exception("输入参数不正确！")
@@ -359,6 +367,10 @@ filePath图片路径\n\
 detect_dire 是否检测图片朝向"
 
     try:
+        if detect_dire == '0':
+            detect_dire = 'false'
+        else:
+            detect_dire = 'true'
         # 如果有一项参数为空
         if IsEmpty(filePath) or IsEmpty(detect_dire):
             raise Exception("输入参数不正确！")
@@ -467,7 +479,7 @@ filePath图片路径"
             return e
 
 
-
+# 获取Wav文件时间长度
 def GetWavLength(WavPath):
     "获取wav文件时长\n\
 filePath  wav路径\n"
@@ -522,11 +534,15 @@ Spd  语速快慢"
             time.sleep(sec)
             playMusic = False
         else:
-            raise Exception("语音合成失败！")
+            err = json.loads(result)
+            if err.get("err_detail") != None:
+                raise Exception("语音合成失败！\n原因：" + err.get("err_detail"))
+            else:
+                raise Exception("语音合成失败！")
 
     except Exception as e:
         playMusic = False
-        messagebox.showerror("语音播放错误","Error:\n" + e.args[0])
+        messagebox.showerror("文字转语音失败", e.args[0])
 
 
 # 将中文表达的语言名称转为英文缩写（如：传入“中英文混合”，输出“CHN_ENG”）
@@ -567,6 +583,7 @@ def InformantToNumber(informant):
         return 4
 
 
+# 用于语音识别
 newThread = threading.Thread(target=Speech)
 
 def Command_Play():
@@ -589,7 +606,7 @@ def Command_Start():
     "开始识别"
 
     if Text1_showPath_Var.get() == "请先选择路径" or IsEmpty(Text1_showPath_Var.get()):
-        tkinter.messagebox.showinfo("图片识别","请先选择文件！") # 弹出提示
+        messagebox.showinfo("图片识别","请先选择文件！") # 弹出提示
         Command_SelectImage() # 调用“选择图片文件”函数
         return   
 
@@ -646,13 +663,16 @@ def Command_SelectImage():
 # 剪切
 def Cut(editor, event=None):
     editor.event_generate("<<Cut>>")
+
 # 复制
 def Copy(editor, event=None):
     editor.event_generate("<<Copy>>")
+
 # 粘贴
 def Paste(editor, event=None):
     editor.event_generate('<<Paste>>')
     SavePicture()
+
 # 鼠标右键菜单栏
 def MouseRightKey(event, editor):
     menubar.delete(0,END)
@@ -681,11 +701,13 @@ def SavePicture():
 
 # 拖动文件
 def DragFile(files):
-    # messagebox.showinfo("拖动的文件",f)
     # 将选择的图片路径显示到Text_showResult控件
     if Text1_showPath_Var.get() != "":
         Text1_showPath.delete('0',tkinter.END)
     Text1_showPath.insert(INSERT,files[0].decode('gbk'))
+
+
+
 
 ############################ 以下为界面设计代码 ###################################
 if __name__ == "__main__":    
