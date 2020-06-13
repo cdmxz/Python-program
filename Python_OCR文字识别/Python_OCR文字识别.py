@@ -10,6 +10,7 @@ import ctypes
 import os
 import hashlib
 import sys
+import inspect
 import winsound  # 播放wav文件
 import wave
 import contextlib# 获取wav文件时长
@@ -61,121 +62,188 @@ def IsEmpty(Str):
         return False
 
 
-def GetAccessToken():
-    "获取文字识别AccessToken"
-    host = 'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + OCR_API_KEY + '&client_secret=' + OCR_SECRET_KEY
-    r = requests.get(host).json()
-    result = r.get("access_token")
-    if IsEmpty(result):
-        raise Exception(r.get("error_description"))
-    else:
-        return result
+class  OCR:
+    def __init__(self, OCR_AK, OCR_SK,TTS_ID,TTS_AK,TTS_SK,TRAN_ID,TRAN_KEY):
+        self.OCR_AK = OCR_AK
+        self.OCR_SK = OCR_SK
+        self.TTS_ID = TTS_ID
+        self.TTS_AK = TTS_AK
+        self.TTS_SK = TTS_SK
+        self.TRAN_ID = TRAN_ID
+        self.TRAN_KEY = TRAN_KEY
+        self.ocr_Token = self.GetAccessToken()
 
 
-def Get_tts_AccessToken():
-    "获取语音合成AccessToken"
-    host = 'https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + \
-TTS_API_KEY + '&client_secret=' + TTS_SECRET_KEY
-    r = requests.get(host).json()
-    result = r.get("access_token")
-    if IsEmpty(result):
-        raise Exception(r.get("error_description"))
-    else:
-        return result
-
-
-
-def GeneralBasic(filePath,lang_type,detect_dire):
-    "通用文字识别\n\
-filePath    图片路径\n\
-lang_type   要识别的语言类型\n\
-detect_dire 是否检测图片朝向"
-
-    try:
-        if detect_dire == '0':
-            detect_dire = 'false'
+    def GetAccessToken(self):
+        "获取文字识别AccessToken"
+        host = 'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + self.OCR_AK + '&client_secret=' + self.OCR_SK
+        r = requests.get(host).json()
+        result = r.get("access_token")
+        if IsEmpty(result):
+            messagebox.showerror("OCR文字识别","获取文字识别Token失败！\n原因：" + r.get("error_description"))
+            return None
         else:
-            detect_dire = 'true'
-    # 如果有一项参数为空
-        if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
-            raise Exception("输入参数不正确！")
+            return result
 
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
-
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
-
-        # 通用文字识别
-        request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic"
-
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
-
-        params = {"image":img,"language_type":lang_type,"detect_direction":detect_dire}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-    
-        if response:
-            r = response.json()
-            # 如果返回的json数据有“error_msg”
-            if r.get("error_msg") != None:
-                raise Exception(r.get("error_msg"))
-            word = ""
-            for result in r.get("words_result"):
-                word+=result["words"] + "\n" 
-
-            return word.rstrip('\n') # 删除掉最后面的'\n'字符
-
-    except Exception as e:
-            print(e)
-            return e
-    
-
-def AccurateBasic(filePath,lang_type,detect_dire):
-    "通用文字识别（高精度版）\n\
-filePath    图片路径\n\
-lang_type   要识别的语言类型\n\
-detect_dire 是否检测图片朝向"
-
-    try:
-        if detect_dire == '0':
-            detect_dire = 'false'
+    def Get_tts_AccessToken(self):
+        "获取语音合成AccessToken"
+        host = 'https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + \
+    self.TTS_AK + '&client_secret=' + self.TTS_SK
+        r = requests.get(host).json()
+        result = r.get("access_token")
+        if IsEmpty(result):
+            messagebox.showerror("OCR文字识别","获取语音合成Token失败！\n原因：" + r.get("error_description"))
+            return None
         else:
-            detect_dire = 'true'
+            return result
+
+    def GeneralBasic(self,filePath,lang_type,detect_dire):
+        "通用文字识别\n\
+    filePath    图片路径\n\
+    lang_type   要识别的语言类型\n\
+    detect_dire 是否检测图片朝向"
+
+        try:
+            if detect_dire == '0':
+                detect_dire = 'false'
+            else:
+                detect_dire = 'true'
         # 如果有一项参数为空
-        if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
-            raise Exception("输入参数不正确！")
+            if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
+                raise Exception("输入参数不正确！")
 
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
 
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
+            # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
 
-        # 通用文字识别（高精度版）
-        request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic"
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
 
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
+            # 通用文字识别
+            request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic"
 
-        params = {"image":img,"language_type":lang_type,"detect_direction":detect_dire}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-        if response:
-            r = response.json()
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
+
+            params = {"image":img,"language_type":lang_type,"detect_direction":detect_dire}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+    
+            if response:
+                r = response.json()
+                # 如果返回的json数据有“error_msg”
+                if r.get("error_msg") != None:
+                    raise Exception(r.get("error_msg"))
+                word = ""
+                for result in r.get("words_result"):
+                    word+=result["words"] + "\n" 
+
+                return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        except Exception as e:
+                #print(e)
+                return e  
+
+    def AccurateBasic(self,filePath,lang_type,detect_dire):
+        "通用文字识别（高精度版）\n\
+    filePath    图片路径\n\
+    lang_type   要识别的语言类型\n\
+    detect_dire 是否检测图片朝向"
+
+        try:
+            if detect_dire == '0':
+                detect_dire = 'false'
+            else:
+                detect_dire = 'true'
+            # 如果有一项参数为空
+            if IsEmpty(filePath) or IsEmpty(lang_type) or IsEmpty(detect_dire):
+                raise Exception("输入参数不正确！")
+
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
+
+            # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
+
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
+
+            # 通用文字识别（高精度版）
+            request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic"
+
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
+
+            params = {"image":img,"language_type":lang_type,"detect_direction":detect_dire}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+            if response:
+                r = response.json()
+                # 如果返回的json数据有“error_msg”
+                if r.get("error_msg") != None:
+                    raise Exception(r.get("error_msg"))
+                word = ""
+                for result in r.get("words_result"):
+                    word+=result["words"] + "\n"
+
+                return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        except Exception as e:
+            #print(e)
+            return e
+
+    def Handwriting(self,filePath):
+        "手写文字识别\n\
+    filePath图片路径"
+
+        try:
+            # 如果有一项参数为空
+            if IsEmpty(filePath):
+                raise Exception("输入参数不正确！")
+
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
+
+            # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
+
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
+
+            # 手写文字识别
+            request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/handwriting"
+
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
+
+            params = {"image":img}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+            if response:
+                r = response.json()
             # 如果返回的json数据有“error_msg”
             if r.get("error_msg") != None:
                 raise Exception(r.get("error_msg"))
@@ -185,379 +253,339 @@ detect_dire 是否检测图片朝向"
 
             return word.rstrip('\n') # 删除掉最后面的'\n'字符
 
-    except Exception as e:
-        print(e)
-        return e
+        except Exception as e:
+                #print(e)
+                return e
 
-
-def Handwriting(filePath):
-    "手写文字识别\n\
-filePath图片路径"
-
-    try:
-        # 如果有一项参数为空
-        if IsEmpty(filePath):
-            raise Exception("输入参数不正确！")
-
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
-
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
-
-        # 手写文字识别
-        request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/handwriting"
-
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
-
-        params = {"image":img}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-        if response:
-            r = response.json()
-        # 如果返回的json数据有“error_msg”
-        if r.get("error_msg") != None:
-            raise Exception(r.get("error_msg"))
-        word = ""
-        for result in r.get("words_result"):
-            word+=result["words"] + "\n"
-
-        return word.rstrip('\n') # 删除掉最后面的'\n'字符
-
-    except Exception as e:
-            print(e)
-            return e
-
-
-# 将识别后返回的 数字信息 转换为 中文信息
-def GetIdcard_number_type(number):
-    if number == - 1:
-        return "身份证正面所有字段全为空"
-    elif number == 0:
-        return "身份证证号识别错误"
-    elif number == 1:
-        return "身份证证号和性别、出生信息一致"
-    elif number == 2:
-        return "身份证证号和性别、出生信息都不一致"
-    elif number == 3:
-        return "身份证证号和出生信息不一致"
-    elif number == 4:
-        return "身份证证号和性别信息不一致"
-    else:
-        return "未知"
-
-
-# 将返回的 英文识别状态 转换为 中文识别状态
-def En_statusToCh_status(EnResult):
-    if EnResult == "normal":
-        return "识别正常"
-    elif EnResult == "reversed_side":
-        return "身份证正反面颠倒"
-    elif EnResult == "non_idcard":
-        return "上传的图片中不包含身份证"
-    elif EnResult == "blurred":
-        return "身份证模糊"
-    elif EnResult == "other_type_card":
-        return "其他类型证照"
-    elif EnResult == "over_exposure":
-        return "身份证关键字段反光或过曝"
-    elif EnResult == "over_dark":
-        return "身份证欠曝（亮度过低）"
-    else:
-        return "其他未知情况"
-
-
-# 将返回的 英文识别身份证类型 转为中文识别身份证类型
-def En_typeToCh_type(EnType):
-    if EnType == "normal":
-        return "正常身份证"
-    elif EnType == "copy":
-        return "复印件"
-    elif EnType == "temporary":
-        return "临时身份证"
-    elif EnType == "screen":
-        return "翻拍"
-    else:
-        return "其他未知情况"    
-
-
-def Idcard(filePath,id_card_side,detect_dire):
-    "身份证识别\n\
-filePath       图片路径\n\
-id_card_side   front照片面 back国徽面\n\
-detect_dire    是否检测图片朝向"
-
-    try:
-        if detect_dire == '0':
-            detect_dire = 'false'
+    # 将识别后返回的 数字信息 转换为 中文信息
+    def GetIdcard_number_type(self,number):
+        if number == - 1:
+            return "身份证正面所有字段全为空"
+        elif number == 0:
+            return "身份证证号识别错误"
+        elif number == 1:
+            return "身份证证号和性别、出生信息一致"
+        elif number == 2:
+            return "身份证证号和性别、出生信息都不一致"
+        elif number == 3:
+            return "身份证证号和出生信息不一致"
+        elif number == 4:
+            return "身份证证号和性别信息不一致"
         else:
-            detect_dire = 'true'
+            return "未知"
 
-        # 如果有一项参数为空
-        if IsEmpty(filePath) or IsEmpty(detect_dire):
-            raise Exception("输入参数不正确！")
-
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
-
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
-
-        # 网络文字识别
-        request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/idcard"
-
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
-
-        params = {"image":img,"id_card_side":id_card_side,"detect_direction":detect_dire,"detect_risk":"true"}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-        if response:
-            r = response.json()
-        # 如果返回的json数据有“error_msg”
-        if r.get("error_msg") != None:
-            raise Exception(r.get("error_msg"))
-
-
-        edit,status,Type,word = "","","",""
-        if r.get("edit_tool") != None:
-            edit = "\n编辑软件名称：" + r.get("edit_tool")
-        
-        if r.get("image_status") != None:
-            status = r.get("image_status")
-        if r.get("risk_type") != None:
-            Type = r.get("risk_type")
-        
-
-        word = "识别状态：" + En_statusToCh_status(status) + \
-        "\n身份证类型：" + En_typeToCh_type(Type) + edit
-
-        
-        if id_card_side == "front": # 身份证照片面
-            word +="\n身份证号码、性别、出生是否一致：" + GetIdcard_number_type(r.get("idcard_number_type")) + \
-            "\n姓名：" + r["words_result"]["姓名"]["words"] + \
-            "\n性别：" + r["words_result"]["性别"]["words"] + \
-            "\n民族：" + r["words_result"]["民族"]["words"] + \
-            "\n出生：" + r["words_result"]["出生"]["words"] + \
-            "\n身份证号码：" + r["words_result"]["公民身份号码"]["words"] + \
-            "\n住址：" + r["words_result"]["住址"]["words"]
-        else:                       # 身份证国徽面
-            word += "\n签发日期：" + r["words_result"]["签发日期"]["words"] + \
-            "\n失效日期：" + r["words_result"]["失效日期"]["words"] + \
-            "\n签发机关：" + r["words_result"]["签发机关"]["words"]
-
-        return word.rstrip('\n') # 删除掉最后面的'\n'字符
-
-    except Exception as e:
-        print(e)
-        return e
-
-
-def Numbers(filePath,detect_dire):
-    "数字识别\n\
-filePath图片路径\n\
-detect_dire 是否检测图片朝向"
-
-    try:
-        if detect_dire == '0':
-            detect_dire = 'false'
+    # 将返回的 英文识别状态 转换为 中文识别状态
+    def En_statusToCh_status(self,EnResult):
+        if EnResult == "normal":
+            return "识别正常"
+        elif EnResult == "reversed_side":
+            return "身份证正反面颠倒"
+        elif EnResult == "non_idcard":
+            return "上传的图片中不包含身份证"
+        elif EnResult == "blurred":
+            return "身份证模糊"
+        elif EnResult == "other_type_card":
+            return "其他类型证照"
+        elif EnResult == "over_exposure":
+            return "身份证关键字段反光或过曝"
+        elif EnResult == "over_dark":
+            return "身份证欠曝（亮度过低）"
         else:
-            detect_dire = 'true'
-        # 如果有一项参数为空
-        if IsEmpty(filePath) or IsEmpty(detect_dire):
-            raise Exception("输入参数不正确！")
+            return "其他未知情况"
 
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
+    # 将返回的 英文识别身份证类型 转为中文识别身份证类型
+    def En_typeToCh_type(self,EnType):
+        if EnType == "normal":
+            return "正常身份证"
+        elif EnType == "copy":
+            return "复印件"
+        elif EnType == "temporary":
+            return "临时身份证"
+        elif EnType == "screen":
+            return "翻拍"
+        else:
+            return "其他未知情况"    
 
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
+    def Idcard(self,filePath,id_card_side,detect_dire):
+        "身份证识别\n\
+    filePath       图片路径\n\
+    id_card_side   front照片面 back国徽面\n\
+    detect_dire    是否检测图片朝向"
 
-        # 网络文字识别
-        request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/numbers"
+        try:
+            if detect_dire == '0':
+                detect_dire = 'false'
+            else:
+                detect_dire = 'true'
 
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
+            # 如果有一项参数为空
+            if IsEmpty(filePath) or IsEmpty(detect_dire):
+                raise Exception("输入参数不正确！")
 
-        params = {"image":img,"detect_direction":detect_dire}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-        if response:
-            r = response.json()
-        # 如果返回的json数据有“error_msg”
-        if r.get("error_msg") != None:
-            raise Exception(r.get("error_msg"))
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
 
-        word = ""
-        for result in r.get("words_result"):
-            word+=result["words"] + "\n"
+            # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
 
-        return word.rstrip('\n') # 删除掉最后面的'\n'字符
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
 
-    except Exception as e:
-        print(e)
-        return e
-        
+            # 网络文字识别
+            request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/idcard"
 
-# 下载表格文字识别识别后返回的表格
-def DownFile(url, filePath):
-    try:
-        r = requests.get(url)
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
 
-        with open(filePath, 'wb') as f:
-            f.write(r.content)
-
-        return "已下载到当前文件夹（文件路径：" + filePath + "）"
-
-    except Exception as e:
-        return "未下载到当前文件夹"
-
-
-def TableIdent(filePath):
-    "表格文字识别 提交（异步接口）\n\
-filePath图片路径"
-
-    try:
-        # 如果有一项参数为空
-        if IsEmpty(filePath):
-            raise Exception("输入参数不正确！")
-
-        # 判断文件是否存在
-        if not os.path.exists(filePath):
-            raise Exception("文件不存在！")
-
-        # 获取AccessToken
-        access_token = GetAccessToken()
-        if IsEmpty(access_token):
-            raise Exception("获取AccessToken失败！")
-
-        # 表格文字识别 提交（异步接口）
-        request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/form_ocr/request"
-
-        # 二进制方式打开图片文件
-        file = open(filePath, 'rb')
-        # base64编码
-        img = base64.b64encode(file.read())
-
-        params = {"image":img,"is_sync":"true","request_type":"excel"}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response = requests.post(request_url, data=params, headers=headers)
-        if response:
-            r = response.json()
+            params = {"image":img,"id_card_side":id_card_side,"detect_direction":detect_dire,"detect_risk":"true"}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+            if response:
+                r = response.json()
             # 如果返回的json数据有“error_msg”
             if r.get("error_msg") != None:
                 raise Exception(r.get("error_msg"))
 
-            url = r['result']['result_data']
-            percent = r['result']['percent']
-            retMsg = r['result']['ret_msg']
-            
-            # 获取当前时间，用作音频文件的文件名
-            curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-            # 下载表格时所存放的目录
-            fileDir = os.path.abspath('.') + '\\OCR文字识别_下载的表格'
-            if not os.path.exists(fileDir):
-                os.mkdir(fileDir) # 目录不存在则创建
-            fileName = fileDir + '\\' + curr_time + '.xls'
-        
-            return "识别进度：" + str(percent) + "%\n识别结果：" + retMsg + "\n是否下载：" + DownFile(url,fileName) + "\n下载地址：" + url
-        else:
-            return "识别失败！"
 
-    except Exception as e:
-            print(e)
+            edit,status,Type,word = "","","",""
+            if r.get("edit_tool") != None:
+                edit = "\n编辑软件名称：" + r.get("edit_tool")
+        
+            if r.get("image_status") != None:
+                status = r.get("image_status")
+            if r.get("risk_type") != None:
+                Type = r.get("risk_type")
+        
+
+            word = "识别状态：" + self.En_statusToCh_status(status) + \
+            "\n身份证类型：" + self.En_typeToCh_type(Type) + edit
+
+        
+            if id_card_side == "front": # 身份证照片面
+                word +="\n身份证号码、性别、出生是否一致：" + self.GetIdcard_number_type(r.get("idcard_number_type")) + \
+                "\n姓名：" + r["words_result"]["姓名"]["words"] + \
+                "\n性别：" + r["words_result"]["性别"]["words"] + \
+                "\n民族：" + r["words_result"]["民族"]["words"] + \
+                "\n出生：" + r["words_result"]["出生"]["words"] + \
+                "\n身份证号码：" + r["words_result"]["公民身份号码"]["words"] + \
+                "\n住址：" + r["words_result"]["住址"]["words"]
+            else:                       # 身份证国徽面
+                word += "\n签发日期：" + r["words_result"]["签发日期"]["words"] + \
+                "\n失效日期：" + r["words_result"]["失效日期"]["words"] + \
+                "\n签发机关：" + r["words_result"]["签发机关"]["words"]
+
+            return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        except Exception as e:
+            #print(e)
             return e
+
+    def Numbers(self,filePath,detect_dire):
+        "数字识别\n\
+    filePath图片路径\n\
+    detect_dire 是否检测图片朝向"
+
+        try:
+            if detect_dire == '0':
+                detect_dire = 'false'
+            else:
+                detect_dire = 'true'
+            # 如果有一项参数为空
+            if IsEmpty(filePath) or IsEmpty(detect_dire):
+                raise Exception("输入参数不正确！")
+
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
+
+           # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
+
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
+
+            # 网络文字识别
+            request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/numbers"
+
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
+
+            params = {"image":img,"detect_direction":detect_dire}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+            if response:
+                r = response.json()
+            # 如果返回的json数据有“error_msg”
+            if r.get("error_msg") != None:
+                raise Exception(r.get("error_msg"))
+
+            word = ""
+            for result in r.get("words_result"):
+                word+=result["words"] + "\n"
+
+            return word.rstrip('\n') # 删除掉最后面的'\n'字符
+
+        except Exception as e:
+            #print(e)
+            return e
+        
+    # 下载表格文字识别识别后返回的表格
+    def DownFile(self,url, filePath):
+        try:
+            r = requests.get(url)
+
+            with open(filePath, 'wb') as f:
+                f.write(r.content)
+
+            return "已下载到当前文件夹（文件路径：" + filePath + "）"
+
+        except Exception as e:
+            return "未下载到当前文件夹"
+
+    def TableIdent(self,filePath):
+        "表格文字识别 提交（异步接口）\n\
+    filePath图片路径"
+
+        try:
+            # 如果有一项参数为空
+            if IsEmpty(filePath):
+                raise Exception("输入参数不正确！")
+
+            # 判断文件是否存在
+            if not os.path.exists(filePath):
+                raise Exception("文件不存在！")
+
+            # 获取AccessToken
+            access_token = self.ocr_Token
+            if access_token == None:
+                access_token = self.GetAccessToken()
+
+            if IsEmpty(access_token):
+                return ''
+                #raise Exception("获取AccessToken失败！")
+
+            # 表格文字识别 提交（异步接口）
+            request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/form_ocr/request"
+
+            # 二进制方式打开图片文件
+            file = open(filePath, 'rb')
+            # base64编码
+            img = base64.b64encode(file.read())
+
+            params = {"image":img,"is_sync":"true","request_type":"excel"}
+            request_url = request_url + "?access_token=" + access_token
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            response = requests.post(request_url, data=params, headers=headers)
+            if response:
+                r = response.json()
+                # 如果返回的json数据有“error_msg”
+                if r.get("error_msg") != None:
+                    raise Exception(r.get("error_msg"))
+
+                url = r['result']['result_data']
+                percent = r['result']['percent']
+                retMsg = r['result']['ret_msg']
+            
+                # 获取当前时间，用作音频文件的文件名
+                curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
+                # 下载表格时所存放的目录
+                fileDir = os.path.abspath('.') + '\\OCR文字识别_下载的表格'
+                if not os.path.exists(fileDir):
+                    os.mkdir(fileDir) # 目录不存在则创建
+                fileName = fileDir + '\\' + curr_time + '.xls'
+        
+                return "识别进度：" + str(percent) + "%\n识别结果：" + retMsg + "\n是否下载：" + self.DownFile(url,fileName) + "\n下载地址：" + url
+            else:
+                return "识别失败！"
+
+        except Exception as e:
+                #print(e)
+                return e.args[0]+"\n如果识别失败请重试。"
+
+
 
 
 # 获取Wav文件时间长度
 def GetWavLength(WavPath):
-    "获取wav文件时长\n\
-filePath  wav路径\n"
-    with contextlib.closing(wave.open(WavPath,'r')) as f:
-        return f.getnframes() / float(f.getframerate())
-
+        "获取wav文件时长\n\
+    filePath  wav路径\n"
+        with contextlib.closing(wave.open(WavPath,'r')) as f:
+            return f.getnframes() / float(f.getframerate())
 
 def Speech(Text,Vol,Per,Spd):
-    "文字转语音 （只支持中英文和数字）\n\
-Text 要合成的文本内容\n\
-Vol  音量大小\n\
-Per  发音人\n\
-Spd  语速快慢"
+        "文字转语音 （只支持中英文和数字）\n\
+    Text 要合成的文本内容\n\
+    Vol  音量大小\n\
+    Per  发音人\n\
+    Spd  语速快慢"
 
-    try:
-        # 全局变量
-        global playMusic,playSound
+        try:
+            # 全局变量
+            global playMusic,playSound
 
-        #如果Text为空
-        if IsEmpty(Text):
-            return
+            #如果Text为空
+            if IsEmpty(Text):
+                return
 
-        # 获取ttsAccessToken
-        tts_access_token = Get_tts_AccessToken()
-        if IsEmpty(tts_access_token):
-            raise Exception("获取AccessToken失败！")
+            # 获取ttsAccessToken
+            tts_access_token = ocr.Get_tts_AccessToken()
+            if IsEmpty(tts_access_token):
+                return
+                #raise Exception("获取AccessToken失败！")
 
-        # 获取当前时间，用作音频文件的文件名
-        curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-        # 下载表格时所存放的目录
-        fileDir = os.path.abspath('.') + '\\OCR文字识别_合成的音频文件'
-        if not os.path.exists(fileDir):
-            os.mkdir(fileDir) # 目录不存在则创建
-        musicName = fileDir + '\\' + curr_time + '.wav' 
+            # 获取当前时间，用作音频文件的文件名
+            curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
+            # 下载表格时所存放的目录
+            fileDir = os.path.abspath('.') + '\\OCR文字识别_合成的音频文件'
+            if not os.path.exists(fileDir):
+                os.mkdir(fileDir) # 目录不存在则创建
+            musicName = fileDir + '\\' + curr_time + '.wav' 
 
-        # 将需要合成的文字做2次urlencode编码
-        tex = parse.quote_plus(Text)
-        params = {'tok':tts_access_token,'tex':tex,'per':Per,'spd':Spd,'pit':5,'vol':Vol,'aue':6,'cuid':"test",'lan':'zh','ctp':1}  
-        # 将参数进行urlencode编码
-        data = parse.urlencode(params)
-        req = request.Request("http://tsn.baidu.com/text2audio", data.encode('utf-8'))
-        # 发送post请求
-        f = request.urlopen(req)
-        result = f.read()
-        # 将返回的header信息取出并生成一个字典
-        headers = dict((name.lower(), value) for name, value in f.headers.items())
-        # 如果返回的header含有“Content-Type: audio/wav”，则成功
-        if "audio/wav" == headers['content-type']:
-            with open(musicName, 'wb') as of:
-                    of.write(result)
-            # 播放wav文件
-            playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
-            playMusic = True
-            sec = float(GetWavLength(musicName))
-            # 休眠
-            time.sleep(sec)
-            playMusic = False
-        else:
-            err = json.loads(result)
-            if err.get("err_detail") != None:
-                raise Exception("语音合成失败！\n原因：" + err.get("err_detail"))
+            # 将需要合成的文字做2次urlencode编码
+            tex = parse.quote_plus(Text)
+            params = {'tok':tts_access_token,'tex':tex,'per':Per,'spd':Spd,'pit':5,'vol':Vol,'aue':6,'cuid':"test",'lan':'zh','ctp':1}  
+            # 将参数进行urlencode编码
+            data = parse.urlencode(params)
+            req = request.Request("http://tsn.baidu.com/text2audio", data.encode('utf-8'))
+            # 发送post请求
+            f = request.urlopen(req)
+            result = f.read()
+            # 将返回的header信息取出并生成一个字典
+            headers = dict((name.lower(), value) for name, value in f.headers.items())
+            # 如果返回的header含有“Content-Type: audio/wav”，则成功
+            if "audio/wav" == headers['content-type']:
+                with open(musicName, 'wb') as of:
+                        of.write(result)
+                # 播放wav文件
+                playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
+                playMusic = True
+                sec = float(GetWavLength(musicName))
+                # 休眠
+                time.sleep(sec)
+                playMusic = False
             else:
-                raise Exception("语音合成失败！")
+                err = json.loads(result)
+                if err.get("err_detail") != None:
+                    raise Exception("语音合成失败！\n原因：" + err.get("err_detail"))
+                else:
+                    raise Exception("语音合成失败！")
 
-    except Exception as e:
-        playMusic = False
-        messagebox.showerror("文字转语音失败", e.args[0])
-
+        except Exception as e:
+            playMusic = False
+            messagebox.showerror("文字转语音失败", e.args[0])
 
 # 将中文表达的语言名称转为英文缩写（如：传入“中英文混合”，输出“CHN_ENG”）
 def ChToEn(Lang):
@@ -584,7 +612,6 @@ def ChToEn(Lang):
     else:
         return "CHN_ENG"
 
-
 # 将发音人名称转为数字
 def InformantToNumber(informant):
     if informant == "度小宇":
@@ -596,17 +623,16 @@ def InformantToNumber(informant):
     elif informant == "度丫丫":
         return 4
 
-
-# 用于语音识别
-newThread = threading.Thread(target=Speech)
+# 语音合成
 def Command_Speech():
     "语音合成"
     global playMusic,playSound,newThread
 
     # 如果要合成语音的内容为空
     if IsEmpty(Text2_showResult.get('0.0', 'end').rstrip('\n')):
-        Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。") # 向Text控件插入提示内容
-        return 
+        Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n\
+使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。") # 向Text控件插入提示内容
+        #return 
 
     if not playMusic:
         # 创建一个新线程
@@ -616,16 +642,20 @@ def Command_Speech():
         # 终止线程
         winsound.PlaySound(playSound, winsound.SND_PURGE)
         playMusic = False
-        newThread.join(0)        
+        newThread.join(0)
 
 
+# 识别图片
 def Command_StartOCR():
     "识别图片"
 
-    if IsEmpty(Entry1_showPath_Var.get()) or not os.path.exists(Entry1_showPath_Var.get()):
+    if IsEmpty(Entry1_showPath_Var.get()):
             messagebox.showinfo("图片识别","请先选择文件！") # 弹出提示
-            Command_SelectImage() # 调用“选择图片文件”函数
+            #Command_SelectImage() # 调用“选择图片文件”函数
             return   
+    if not os.path.exists(Entry1_showPath_Var.get()):
+            messagebox.showinfo("图片识别","路径无效！") # 弹出提示
+            return
 
     global playMusic,playSound,newThread
 
@@ -636,22 +666,22 @@ def Command_StartOCR():
         playMusic = False
         newThread.join(0)
 
-    if RadioVar.get() == 1: # 通用文字识别
-        re = GeneralBasic(Entry1_showPath_Var.get(),ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
-    elif RadioVar.get() == 2:
-        re = AccurateBasic(Entry1_showPath_Var.get(),ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
-    elif RadioVar.get() == 3:
-        re = Handwriting(Entry1_showPath_Var.get())
-    elif RadioVar.get() == 4:  
+    if RadioVar.get() == 1:  # 通用文字识别
+        re = ocr.GeneralBasic(Entry1_showPath_Var.get(),ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
+    elif RadioVar.get() == 2:# 通用文字识别（高精度版）
+        re = ocr.AccurateBasic(Entry1_showPath_Var.get(),ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
+    elif RadioVar.get() == 3:# 手写文字识别
+        re = ocr.Handwriting(Entry1_showPath_Var.get())
+    elif RadioVar.get() == 4:# 身份证识别
         if ComboBox2.get() == "照片面": # 获取身份证照片面或国徽面
             f = "front"
         else:
             f = "back"
-        re = Idcard(Entry1_showPath_Var.get(),f,CheckBox1Var.get())  
-    elif RadioVar.get() == 5:
-        re = Numbers(Entry1_showPath_Var.get(),CheckBox1Var.get())
-    elif RadioVar.get() == 6:
-        re = TableIdent(Entry1_showPath_Var.get())
+        re = ocr.Idcard(Entry1_showPath_Var.get(),f,CheckBox1Var.get())  
+    elif RadioVar.get() == 5:# 数字识别
+        re = ocr.Numbers(Entry1_showPath_Var.get(),CheckBox1Var.get())
+    elif RadioVar.get() == 6:# 表格文字识别
+        re = ocr.TableIdent(Entry1_showPath_Var.get())
 
     if IsEmpty(re):
         return
@@ -659,7 +689,7 @@ def Command_StartOCR():
     # 将识别的内容显示到text控件
     if Text2_showResult.get('0.0', 'end') != "":     # 如果Text控件不为空
         Text2_showResult.delete('0.0',tkinter.END)   # 清空Text控件
-    Text2_showResult.insert(INSERT,re)               # 向Text控件插入内容
+    Text2_showResult.insert(INSERT,re)   # 向Text控件插入内容
 
 
 # 选择图片路径
@@ -679,7 +709,9 @@ def Command_SelectImage():
         pass
 
 
+# 翻译
 def Translate(Text,From,To,Salt):
+    "翻译"
     appid = TRAN_APP_ID + Text + Salt + TRAN_KEY
     # 获取md5编码
     m = hashlib.md5()
@@ -698,12 +730,13 @@ def Translate(Text,From,To,Salt):
        
         word = ""
         for r in result['trans_result']:
-            word += r['dst']+'\n'  
+            word += r['dst'] + '\n'  
         return word.rstrip('\n')
     except Exception as e:
-        print(e)
-        return e    
+        messagebox.showerror("OCR文字识别","翻译失败！")
+        return ''     
 
+# 根据触发的此事件的快捷键 选择翻译时的源语言和目标语言
 def Translate_event(event):
     # From 源语言，To 目标语言
     From,To = '',''
@@ -714,7 +747,8 @@ def Translate_event(event):
     # 设置当前识别选项为：通用文字识别（高精度版）
     RadioVar.set(2)
 
-    # 判断是否为鼠标事件
+    # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
+    # 再判断Text控件是否为空 - （如果为空）判断图片路径不为空并且路有效 - 先识别图片文字再翻译
     if event.type == '4':
         # 鼠标左键（英译中）
         if event.num == 1:
@@ -728,13 +762,16 @@ def Translate_event(event):
             return
         replace = False
         if IsEmpty(Text2_showResult.get('0.0', 'end').rstrip('\n')): # 如果Text控件为空
-            if (not IsEmpty(Entry1_showPath_Var.get())) and os.path.exists(Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径无效
+            if (not IsEmpty(Entry1_showPath_Var.get())) and os.path.exists(Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
                     Command_StartOCR()                      # 先文字识别再翻译
-            else:# 如果两个都为空
+            else:# 如果Text控件为空和图片路径为空或路径无效
                 Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
 CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
-                return       
-    else: # 如果为键盘事件
+                From = "zh"
+                to = "en"
+                #return       
+    else: # 如果为键盘事件，则通过判断按下的快捷键，来选择翻译源语言和目标语言，
+          # 然后保存剪切板的图片 - 先识别图片文字再翻译
         if event.keysym == 'C':# 快捷键CTRL+SHIFT+C（中译英）
            From = "zh"
            to = "en"
@@ -750,16 +787,15 @@ CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切�
             return 
         Command_StartOCR()# 文字识别
 
-    # 恢复原来的选项
+    # 恢复原来的文字识别选项
     RadioVar.set(RadioButton_Var)
     # 调用百度api翻译文字
     result = Translate(Text2_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
-    if replace: # 替换原内容
+    if replace: # 是否替换原内容
         Text2_showResult.delete('0.0',tkinter.END)
         Text2_showResult.insert(INSERT, result)
     else:
-        Text2_showResult.insert(INSERT,'\n' + result)
-
+        Text2_showResult.insert(END,'\n' + result)# 追加到末尾
 
 
 # 撤销
@@ -838,6 +874,7 @@ def DragFile(files):
         Entry1_showPath.delete('0',tkinter.END)
     Entry1_showPath.insert(INSERT,files[0].decode('gbk'))
 
+
 # 第一次使用时显示欢迎窗口
 def Welcome():
     readingTipsPath = os.getenv('temp') + '\\readingTips.txt' 
@@ -881,16 +918,14 @@ if __name__ == "__main__":
 
     # 设置窗口的宽高为固定（不能改变大小）
     window.resizable(0,0)
-
+    # 避免messagebox弹窗时显示一个新的窗口
+    #window.withdraw()
     top = window.winfo_toplevel()
     style = Style()
 
-    # menu
-    # 菜单
+
+    # 右键菜单
     menubar = Menu(window, tearoff=False)
-
-
-    # Slider
 
     # 发音语速滑动条
     Slider1 = Scale(top, orient='horizontal', from_=0, to=15)
@@ -968,15 +1003,15 @@ if __name__ == "__main__":
 
     # Button
 
-    # 识别文字按钮
+    # 识别按钮
     style.configure('Command1.TButton',font=('微软雅黑',9))
     Button1_Start = Button(top, text='识别', command=Command_StartOCR, style='Command1.TButton')
-    Button1_Start.place(relx=0.85, rely=0.024, relwidth=0.07, relheight=0.08)
+    Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07, relheight=0.08)
 
-    # 选择图片按钮
+    # 选择按钮
     style.configure('Command1.TButton',font=('微软雅黑',9))
     Button2_SelectImage = Button(top, text='选择', command=Command_SelectImage, style='Command1.TButton')
-    Button2_SelectImage.place(relx=0.774, rely=0.024, relwidth=0.07, relheight=0.08)
+    Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07, relheight=0.08)
 
     # 语音合成
     style.configure('Command1.TButton',font=('微软雅黑',9))
@@ -986,7 +1021,7 @@ if __name__ == "__main__":
     # 翻译按钮
     style.configure('Command1.TButton',font=('微软雅黑',9))
     Button5_Translate = Button(top, text='翻译', style='Command1.TButton')
-    Button5_Translate.place(relx=0.925, rely=0.024, relwidth=0.07, relheight=0.08)
+    Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07, relheight=0.08)
     # 绑定鼠标右键事件
     Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
     Button5_Translate.bind_all("<Control-Shift-C>", lambda x:Translate_event(x))
@@ -1030,6 +1065,11 @@ if __name__ == "__main__":
     Label3 = Label(top, text='图片路径：', style='Label1.TLabel')
     Label3.place(relx=0.010, rely=0.026, relwidth=0.105, relheight=0.07)
 
+
+    # 实例化类
+    ocr = OCR(OCR_API_KEY,OCR_SECRET_KEY,TTS_APP_ID,TTS_API_KEY,TTS_SECRET_KEY,TRAN_APP_ID,TRAN_KEY)
+    # 创建一个线程，用于调用语音合成
+    newThread = threading.Thread(target=Speech)
     Welcome()
     # 显示窗口
     window.mainloop()
