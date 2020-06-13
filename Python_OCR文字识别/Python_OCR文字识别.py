@@ -63,6 +63,7 @@ def IsEmpty(Str):
 
 
 class  OCR:
+    '''文字识别类'''
     def __init__(self, OCR_AK, OCR_SK,TTS_ID,TTS_AK,TTS_SK,TRAN_ID,TRAN_KEY):
         self.OCR_AK = OCR_AK
         self.OCR_SK = OCR_SK
@@ -513,7 +514,7 @@ class  OCR:
 
         except Exception as e:
                 #print(e)
-                return e.args[0]+"\n如果识别失败请重试。"
+                return e.args[0] + "\n如果识别失败请重试。"
 
 
 
@@ -587,6 +588,7 @@ def Speech(Text,Vol,Per,Spd):
             playMusic = False
             messagebox.showerror("文字转语音失败", e.args[0])
 
+
 # 将中文表达的语言名称转为英文缩写（如：传入“中英文混合”，输出“CHN_ENG”）
 def ChToEn(Lang):
     if Lang == "中英文混合":
@@ -632,7 +634,7 @@ def Command_Speech():
     if IsEmpty(Text2_showResult.get('0.0', 'end').rstrip('\n')):
         Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n\
 使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。") # 向Text控件插入提示内容
-        #return 
+        #return
 
     if not playMusic:
         # 创建一个新线程
@@ -769,7 +771,7 @@ def Translate_event(event):
 CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
                 From = "zh"
                 to = "en"
-                #return       
+                #return
     else: # 如果为键盘事件，则通过判断按下的快捷键，来选择翻译源语言和目标语言，
           # 然后保存剪切板的图片 - 先识别图片文字再翻译
         if event.keysym == 'C':# 快捷键CTRL+SHIFT+C（中译英）
@@ -877,18 +879,21 @@ def DragFile(files):
 
 # 第一次使用时显示欢迎窗口
 def Welcome():
-    readingTipsPath = os.getenv('temp') + '\\readingTips.txt' 
-    if os.path.exists(readingTipsPath):
-       return 
-    result = messagebox.askokcancel("欢迎使用OCR文字识别","本软件是文字识别软件，可从图片中提取文字并转为语音或翻译。\n\
-注意：语音合成功能和翻译功能只支持英文、中文、数字。\n\
-\t\t\t  是否查看完整版的使用教程？") 
-    if result:
-        os.system("start https://shimo.im/docs/57662adff7cc449b/")
-    
-    # 创建一个文件，用来标识已阅读第一次使用提示
-    with open(readingTipsPath, 'w') as file:
-        file.write("OCR文字识别_已阅读提示")
+    try:
+        readingTipsPath = os.getenv('temp') + '\\readingTips.txt' 
+        if os.path.exists(readingTipsPath):
+            return 
+        result = messagebox.askokcancel("欢迎使用OCR文字识别","本软件是文字识别软件，可从图片中提取文字并转为语音或翻译。\n\
+    注意：语音合成功能和翻译功能只支持英文、中文、数字。\n\
+    \t\t\t  是否查看完整版的使用教程？") 
+        if result:
+            os.system("start https://shimo.im/docs/e485cac745624f42/")
+
+        # 创建一个文件，用来标识已阅读第一次使用提示
+        with open(readingTipsPath, 'w') as file:
+            file.write("OCR文字识别_已阅读提示")
+    except Exception as e:
+        print(e)
 
 
 
@@ -1073,4 +1078,3 @@ if __name__ == "__main__":
     Welcome()
     # 显示窗口
     window.mainloop()
-    
