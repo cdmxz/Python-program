@@ -904,7 +904,7 @@ if __name__ == "__main__":
     
     windnd.hook_dropfiles(window,func=DragFile)
     # 窗口标题
-    window.title('OCR文字识别  by：南雄市黄坑中学-傅宏华  最后修改时间：2020-06-14 11:50')
+    window.title('OCR文字识别  最后修改时间：2020-06-14 11:50')
     # 调用api设置成由应用程序自己缩放
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
     # 调用api获得当前的缩放因子
