@@ -1,17 +1,16 @@
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>53454c25-25e5-4401-8853-5b81a3b73649</ProjectGuid>
-    <ProjectHome>
-    </ProjectHome>
+    <ProjectGuid>86f03a21-86f2-4f52-92ce-87240b8390b6</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
     <StartupFile>Python_OCR文字识别.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>Python_OCR文字识别</Name>
-    <RootNamespace>PythonApplication1</RootNamespace>
+    <RootNamespace>Python_OCR文字识别</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
