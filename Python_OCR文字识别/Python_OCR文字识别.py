@@ -430,10 +430,9 @@ class  OCR:
     def DownFile(self,url, filePath):
         try:
             r = requests.get(url)
-
             with open(filePath, 'wb') as f:
                 f.write(r.content)
-                f.close()
+
             return "已下载到当前文件夹（文件路径：" + filePath + "）"
 
         except Exception as e:
@@ -588,7 +587,7 @@ class TTS:
                 if "audio/wav" == headers['content-type']:
                     with open(musicName, 'wb') as of:
                             of.write(result)
-                            of.close()
+         
                     # 播放wav文件
                     playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
                     playMusic = True
@@ -670,6 +669,169 @@ def create_Tip(widget, text):
     widget.bind('<Leave>', leave)
 
 
+class GUI:
+    """界面设计类"""
+    def __init__(self,root):
+        self.root = root
+
+    def create_window(self):
+         # 窗口标题
+        self.root.title('OCR文字识别  最后修改时间：2020-07-25')
+        # 获取屏幕宽度
+        self.screenW = self.root.winfo_screenwidth()
+        # 获取屏幕高度
+        self.screenH = self.root.winfo_screenheight()
+        # 窗口宽度和高度
+        self.windowW,self.windowH = 618 ,400
+        # 设置窗口显示居中
+        self.root.geometry('%dx%d+%d+%d' % (self.windowW, self.windowH,((self.screenW - self.windowW) / 2),((self.screenH - self.windowH) / 2)))
+
+        # 设置窗口的宽高为固定（不能改变大小）
+        self.root.resizable(0,0)
+        self.top = self.root.winfo_toplevel()
+        self.style = Style()
+
+        # 右键菜单
+        self.menubar = Menu(self.root, tearoff=False)
+
+        # 发音语速滑动条
+        self.Slider1 = Scale(self.top, orient='horizontal', from_=0, to=15)
+        self.Slider1.place(relx=0.472, rely=0.210, relwidth=0.118, relheight=0.098)
+        self.Slider1.set(5)
+        create_Tip(self.Slider1,"设置语音合成发音语速")
+
+        # 音量滑动条
+        self.Slider2 = Scale(self.top, orient='horizontal', from_=0, to=15)
+        self.Slider2.place(relx=0.660, rely=0.212, relwidth=0.118, relheight=0.098)
+        self.Slider2.set(7)
+        create_Tip(self.Slider2,"设置语音合成发音音量")
+
+        # 识别文字时是否检测图片朝向
+        self.CheckBox1Var = StringVar(value='1')
+        self.style.configure('Check1.TCheckbutton',font=('微软雅黑',10))
+        self.CheckBox1 = Checkbutton(self.top, text='检测图片朝向', variable=self.CheckBox1Var, style='Check1.TCheckbutton')
+        self.CheckBox1.place(relx=0.246, rely=0.215, relwidth=0.17, relheight=0.074)
+
+        # 选择要识别的图片中的语言
+        self.ComboBox1_lang_List = ['中英文混合','英文','葡萄牙语','法语','德语','意大利语','西班牙语','俄语','日语','韩语']
+        self.ComboBox1_lang = Combobox(self.top, state='readonly', values=self.ComboBox1_lang_List, font=('微软雅黑',10))
+        self.ComboBox1_lang.place(relx=0.013, rely=0.215, relwidth=0.12, relheight=0.08)
+        self.ComboBox1_lang.set(self.ComboBox1_lang_List[0])
+        create_Tip(self.ComboBox1_lang,"选择要识别的图片中的语言")
+
+        # 选择身份证正反面
+        self.ComboBox2List = ['照片面','国徽面']
+        self.ComboBox2 = Combobox(self.top, state='readonly',values=self.ComboBox2List, font=('微软雅黑',10))
+        self.ComboBox2.place(relx=0.14, rely=0.215, relwidth=0.10, relheight=0.08) 
+        self.ComboBox2.set(self.ComboBox2List[0])
+        create_Tip(self.ComboBox2,"身份证识别时选择照片面或国徽面")
+
+        # 发音人
+        self.ComboBox3_informant_List = ['度小宇','度小美','度逍遥','度丫丫']
+        self.ComboBox3_informant = Combobox(self.top, state='readonly', values=self.ComboBox3_informant_List, font=('微软雅黑',10))
+        self.ComboBox3_informant.place(relx=0.785, rely=0.215, relwidth=0.1, relheight=0.08)
+        self.ComboBox3_informant.set(self.ComboBox3_informant_List[0])
+        create_Tip(self.ComboBox3_informant,"选择语音合成发音人")
+
+        # 默认选中第一个单选框
+        self.RadioVar = IntVar()   
+        self.RadioVar.set(1)
+
+        # 通用文字识别单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton1 = Radiobutton(self.top, text='通用文字识别', variable=self.RadioVar, value=1, style='Option1.TRadiobutton')
+        self.RadioButton1.place(relx=0.010, rely=0.120, relwidth=0.157, relheight=0.074)
+
+        # 通用文字识别（高精度版）单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton2 = Radiobutton(self.top, text='通用文字识别（高精度版）',variable=self.RadioVar, value=2, style='Option1.TRadiobutton')
+        self.RadioButton2.place(relx=0.167, rely=0.120, relwidth=0.273, relheight=0.074)
+
+        # 手写文字识别单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton3 = Radiobutton(self.top, text='手写文字识别',variable=self.RadioVar, value=3, style='Option1.TRadiobutton')
+        self.RadioButton3.place(relx=0.432, rely=0.120, relwidth=0.157, relheight=0.074)
+
+        # 身份证识别单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton4 = Radiobutton(self.top, text='身份证识别',variable=self.RadioVar, value=4, style='Option1.TRadiobutton')
+        self.RadioButton4.place(relx=0.59, rely=0.120, relwidth=0.157, relheight=0.074)
+
+        # 数字识别单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton5 = Radiobutton(self.top, text='数字识别',variable=self.RadioVar, value=5, style='Option1.TRadiobutton')
+        self.RadioButton5.place(relx=0.73, rely=0.120, relwidth=0.131, relheight=0.074)
+
+        # 表格识别单选按钮
+        self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
+        self.RadioButton5 = Radiobutton(self.top, text='表格文字识别',variable=self.RadioVar, value=6, style='Option1.TRadiobutton')
+        self.RadioButton5.place(relx=0.847, rely=0.120, relwidth=0.157, relheight=0.074)
+
+        # 识别按钮
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.Button1_Start = Button(self.top, text='识别', command=Command_OCR, style='Command1.TButton')
+        self.Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07, relheight=0.08)
+        create_Tip(self.Button1_Start,"识别图片中的文字")
+
+        # 选择按钮
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.Button2_SelectImage = Button(self.top, text='选择', command=Command_SelectImage, style='Command1.TButton')
+        self.Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07, relheight=0.08)
+        create_Tip(self.Button2_SelectImage,"选择图片路径")
+
+        # 语音合成
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.button4_StopPlay = Button(self.top, text='语音合成', command=Command_Speech,style='Command1.TButton')
+        self.button4_StopPlay.place(relx=0.89, rely=0.215, relwidth=0.105, relheight=0.082)
+        create_Tip(self.button4_StopPlay,"将文字合成为语音\n单击可发音\n再单击停止发音")
+
+        # 翻译按钮
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.Button5_Translate = Button(self.top, text='翻译', style='Command1.TButton')
+        self.Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07, relheight=0.08)
+        # 绑定鼠标右键事件
+        self.Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
+        self.Button5_Translate.bind_all("<Control-Shift-C>", lambda x:Translate_event(x))
+        # 绑定鼠标左键事件
+        self.Button5_Translate.bind("<Button-1>", lambda x: Translate_event(x))
+        self.Button5_Translate.bind_all("<Control-Shift-E>", lambda x:Translate_event(x))
+        create_Tip(self.Button5_Translate,"鼠标左键为英译中，右键单击为中译英\nCTRL+SHIFT+E先识别粘贴剪切板的图片，再英译中\nCTRL+SHIFT+C先识别粘贴剪切板的图片，再中译英")
+
+        # 显示图片的路径
+        self.Entry1_showPath_Var = StringVar(value='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径')
+        self.Entry1_showPath = Entry(self.top, text='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
+        self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.650, relheight=0.074)
+        # 绑定鼠标右键事件
+        self.Entry1_showPath.bind("<Button-3>", lambda x: Entry1_MouseRightKey(x, self.Entry1_showPath)) 
+        self.Entry1_showPath.bind("<Control-v>",lambda x: SaveClipImage())
+
+        # 显示识别后的结果
+        self.Text1_showResult = Text(self.top, font=('微软雅黑',10), undo = True)
+        self.Text1_showResult.place(relx=0, rely=0.32, relwidth=0.985, relheight=0.683)
+        # 绑定鼠标右键事件
+        self.Text1_showResult.bind("<Button-3>", lambda x: Text_MouseRightKey(x, self.Text1_showResult)) 
+        self.Text1_showResult.bind("<Control-v>", lambda x: SaveClipImage())
+
+        # text控件滚动条
+        self.Slider3_scroll = tkinter.Scrollbar()
+        self.Slider3_scroll.place(relx=0.985, rely=0.357, relwidth=0.10, relheight=0.683)
+        # 关联到Text1_showResult控件
+        self.Slider3_scroll.config(command=self.Text1_showResult.yview)
+        self.Text1_showResult.config(yscrollcommand=self.Slider3_scroll.set)
+
+        self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
+        self.Label1 = Label(self.top, text='语速：', style='Label1.TLabel')
+        self.Label1.place(relx=0.408, rely=0.250, relwidth=0.066, relheight=0.051)
+
+        self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
+        self.Label2 = Label(self.top, text='音量：', style='Label1.TLabel')
+        self.Label2.place(relx=0.595, rely=0.250, relwidth=0.066, relheight=0.051)
+
+        self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
+        self.Label3 = Label(self.top, text='图片路径：', style='Label1.TLabel')
+        self.Label3.place(relx=0.010, rely=0.026, relwidth=0.105, relheight=0.07)
+
+
 # 翻译
 def Translate(Text,From,To,Salt):
     "翻译"
@@ -704,9 +866,9 @@ def Translate_event(event):
     replace = False # 是否替换掉翻译源内容
     salt = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M%S')
     # 先保存当前选择的选项
-    RadioButton_Var = RadioVar.get()
+    gui.RadioButton_Var = gui.RadioVar.get()
     # 设置当前识别选项为：通用文字识别（高精度版）
-    RadioVar.set(2)
+    gui.RadioVar.set(2)
 
     # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
     # 再判断Text控件是否为空 - （如果为空）判断图片路径不为空并且路有效 - 先识别图片文字再翻译
@@ -722,11 +884,11 @@ def Translate_event(event):
         else:
             return
         replace = False
-        if IsEmpty(Text2_showResult.get('0.0', 'end').rstrip('\n')): # 如果Text控件为空
-            if (not IsEmpty(Entry1_showPath_Var.get())) and os.path.exists(Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
+        if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')): # 如果Text控件为空
+            if (not IsEmpty(gui.Entry1_showPath_Var.get())) and os.path.exists(gui.Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
                     Command_OCR()                      # 先文字识别再翻译
             else:# 如果Text控件为空和图片路径为空或路径无效
-                Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
+                gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
 CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
                 From = "zh"
                 to = "en"
@@ -742,27 +904,27 @@ CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切�
         #replace = True # 替换掉翻译源内容
 
         # 将剪切板中的图片保存到本地
-        fileName = SaveClipPicture()
+        fileName = SaveClipImage()
         if IsEmpty(fileName):
-            #Text2_showResult.insert(INSERT,"保存剪切版中的图片失败！") # 向Text控件插入提示内容
+            #Text1_showResult.insert(INSERT,"保存剪切版中的图片失败！") # 向Text控件插入提示内容
             return 
         Command_OCR()# 文字识别
 
     # 恢复原来的文字识别选项
-    RadioVar.set(RadioButton_Var)
+    gui.RadioVar.set(gui.RadioButton_Var)
     # 调用百度api翻译文字
-    result = Translate(Text2_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
+    result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
     if replace: # 是否替换原内容
-        Text2_showResult.delete('0.0',tkinter.END)
-        Text2_showResult.insert(INSERT, result)
+        gui.Text1_showResult.delete('0.0',tkinter.END)
+        gui.Text1_showResult.insert(INSERT, result)
     else:
-        Text2_showResult.insert(END,'\n' + result)# 追加到末尾
+        gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
 
 
 # 创建一个新线程
-def CreateThread():
+def CreateThread(text):
     global newThread
-    newThread = threading.Thread(target=tts.Speech, args=(Text2_showResult.get('0.0', 'end').rstrip('\n'),Slider2.get(),tts.InformantToNumber(ComboBox3_informant.get()),Slider1.get()))
+    newThread = threading.Thread(target=tts.Speech, args=(text.rstrip('\n'),gui.Slider2.get(),tts.InformantToNumber(gui.ComboBox3_informant.get()),gui.Slider1.get()))
     # 父线程退出时，子线程也退出
     newThread.daemon = True
     newThread.start()
@@ -774,13 +936,13 @@ def Command_Speech():
     global playMusic,playSound,newThread
 
     # 如果要合成语音的内容为空
-    if IsEmpty(Text2_showResult.get('0.0', 'end').rstrip('\n')):
-        Text2_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n\
+    if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')):
+        gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n\
 使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。\n4、单击“语音合成”按钮可停止发音。") # 向Text控件插入提示内容
         #return
 
     if not playMusic:
-        CreateThread()
+        CreateThread(gui.Text1_showResult.get('0.0', tkinter.END))
     else:
         # 终止线程
         winsound.PlaySound(playSound, winsound.SND_PURGE)
@@ -792,11 +954,13 @@ def Command_Speech():
 def Command_OCR():
     "识别图片"
 
-    if IsEmpty(Entry1_showPath_Var.get()):
+    # 如果文件不存在
+    if IsEmpty(gui.Entry1_showPath_Var.get()):
             messagebox.showinfo("图片识别","请先选择文件！") # 弹出提示
-            #Command_SelectImage() # 调用“选择图片文件”函数
+            Command_SelectImage() # 调用“选择图片文件”函数
             return   
-    if not os.path.exists(Entry1_showPath_Var.get()):
+    # 如果文件不存在
+    if not os.path.exists(gui.Entry1_showPath_Var.get()):
             messagebox.showinfo("图片识别","路径无效！") # 弹出提示
             return
 
@@ -809,30 +973,28 @@ def Command_OCR():
         playMusic = False
         newThread.join(0)
 
-    if RadioVar.get() == 1:  # 通用文字识别
-        re = ocr.GeneralBasic(Entry1_showPath_Var.get(),ocr.ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
-    elif RadioVar.get() == 2:# 通用文字识别（高精度版）
-        re = ocr.AccurateBasic(Entry1_showPath_Var.get(),ocr.ChToEn(ComboBox1_lang.get()),CheckBox1Var.get())
-    elif RadioVar.get() == 3:# 手写文字识别
-        re = ocr.Handwriting(Entry1_showPath_Var.get())
-    elif RadioVar.get() == 4:# 身份证识别
-        if ComboBox2.get() == "照片面": # 获取身份证照片面或国徽面
-            f = "front"
-        else:
-            f = "back"
-        re = ocr.Idcard(Entry1_showPath_Var.get(),f,CheckBox1Var.get())  
-    elif RadioVar.get() == 5:# 数字识别
-        re = ocr.Numbers(Entry1_showPath_Var.get(),CheckBox1Var.get())
-    elif RadioVar.get() == 6:# 表格文字识别
-        re = ocr.TableIdent(Entry1_showPath_Var.get())
+    if gui.RadioVar.get() == 1:  # 通用文字识别
+        re = ocr.GeneralBasic(gui.Entry1_showPath_Var.get(),ocr.ChToEn(gui.ComboBox1_lang.get()),gui.CheckBox1Var.get())
+    elif gui.RadioVar.get() == 2:# 通用文字识别（高精度版）
+        re = ocr.AccurateBasic(gui.Entry1_showPath_Var.get(),ocr.ChToEn(gui.ComboBox1_lang.get()),gui.CheckBox1Var.get())
+    elif gui.RadioVar.get() == 3:# 手写文字识别
+        re = ocr.Handwriting(gui.Entry1_showPath_Var.get())
+    elif gui.RadioVar.get() == 4:# 身份证识别
+        f = "front" if gui.ComboBox2.get() == "照片面" else "back" # 获取身份证照片面或国徽面
+        re = ocr.Idcard(gui.Entry1_showPath_Var.get(),f,gui.CheckBox1Var.get())  
+    elif gui.RadioVar.get() == 5:# 数字识别
+        re = ocr.Numbers(gui.Entry1_showPath_Var.get(),gui.CheckBox1Var.get())
+    elif gui.RadioVar.get() == 6:# 表格文字识别
+        re = ocr.TableIdent(gui.Entry1_showPath_Var.get())
 
+    # 如果返回的结果为空
     if IsEmpty(re):
         return
 
     # 将识别的内容显示到text控件
-    if Text2_showResult.get('0.0', 'end') != "":     # 如果Text控件不为空
-        Text2_showResult.delete('0.0',tkinter.END)   # 清空Text控件
-    Text2_showResult.insert(INSERT,re)   # 向Text控件插入内容
+    if gui.Text1_showResult.get('0.0', 'end') != "":     # 如果Text控件不为空
+        gui.Text1_showResult.delete('0.0',tkinter.END)   # 清空Text控件
+    gui.Text1_showResult.insert(INSERT,re)   # 向Text控件插入内容
 
 
 # 选择图片路径
@@ -844,15 +1006,15 @@ def Command_SelectImage():
         if fileName == "" or fileName == None: # 如果未选择文件
             return 
         # 否则将选择的图片路径显示到Text_showResult控件
-        if Entry1_showPath_Var.get() != "":
-            Entry1_showPath.delete('0',tkinter.END)
-        Entry1_showPath.insert(INSERT,fileName)
+        if gui.Entry1_showPath_Var.get() != "":
+            gui.Entry1_showPath.delete('0',tkinter.END)
+        gui.Entry1_showPath.insert(INSERT,fileName)
 
 
 # 撤销
 def Undo(editor, event=None):
     # 如果还剩一个字符，则返回
-    if len(editor.get('0.0', 'end').rstrip('\n')) <= 1: 
+    if len(editor.get('0.0', tkinter.END).rstrip('\n')) <= 1: 
         return
     editor.edit_undo()
 
@@ -874,30 +1036,47 @@ def Copy(editor, event=None):
 # 粘贴
 def Paste(editor, event=None):
     editor.event_generate('<<Paste>>')
-    SaveClipPicture()
+    SaveClipImage()
+
+
+def SpeechSelectCont(editor, event=None):
+    try:
+        selectText = gui.Text1_showResult.selection_get()
+        global playMusic,playSound,newThread
+
+        # 如果线程在运行则终止线程
+        if  playMusic:
+            winsound.PlaySound(playSound, winsound.SND_PURGE)
+            playMusic = False
+            newThread.join(0)
+        # 文字转语音
+        CreateThread(selectText)
+    except:
+        pass
 
 
 # 鼠标右键菜单栏
-def Text2_MouseRightKey(event, editor):
-    menubar.delete(0,tkinter.END)
-    menubar.add_command(label='剪切',command=lambda:Cut(editor))
-    menubar.add_command(label='复制',command=lambda:Copy(editor))
-    menubar.add_command(label='粘贴',command=lambda:Paste(editor))
-    menubar.add_command(label='撤销',command=lambda:Undo(editor))
-    menubar.add_command(label='恢复',command=lambda:Redo(editor))
-    menubar.post(event.x_root,event.y_root)
+def Text_MouseRightKey(event, editor):
+    gui.menubar.delete('0',tkinter.END)
+    gui.menubar.add_command(label='剪切',command=lambda:Cut(editor))
+    gui.menubar.add_command(label='复制',command=lambda:Copy(editor))
+    gui.menubar.add_command(label='粘贴',command=lambda:Paste(editor))
+    gui.menubar.add_command(label='撤销',command=lambda:Undo(editor))
+    gui.menubar.add_command(label='恢复',command=lambda:Redo(editor))
+    gui.menubar.add_command(label='朗读选择项',command=lambda:SpeechSelectCont(editor))
+    gui.menubar.post(event.x_root,event.y_root)
 
 # 鼠标右键菜单栏
-def Text1_MouseRightKey(event, editor):
-    menubar.delete(0,tkinter.END)
-    menubar.add_command(label='剪切',command=lambda:Cut(editor))
-    menubar.add_command(label='复制',command=lambda:Copy(editor))
-    menubar.add_command(label='粘贴',command=lambda:Paste(editor))
-    menubar.post(event.x_root,event.y_root)
+def Entry1_MouseRightKey(event, editor):
+    gui.menubar.delete(0,tkinter.END)
+    gui.menubar.add_command(label='剪切',command=lambda:Cut(editor))
+    gui.menubar.add_command(label='复制',command=lambda:Copy(editor))
+    gui.menubar.add_command(label='粘贴',command=lambda:Paste(editor))
+    gui.menubar.post(event.x_root,event.y_root)
 
 
 # 保存剪切板的图片
-def SaveClipPicture():
+def SaveClipImage():
     im = ImageGrab.grabclipboard()
     # 如果im=None则说明剪切板没有图片
     if im == None:
@@ -922,39 +1101,34 @@ def SaveClipPicture():
 # 拖动文件
 def DragFile(files):
     # 将选择的图片路径显示到Text_showResult控件
-    if Entry1_showPath_Var.get() != "":
-        Entry1_showPath.delete('0',tkinter.END)
-    Entry1_showPath.insert(INSERT,files[0].decode('gbk'))
+    if gui.Entry1_showPath_Var.get() != "":
+        gui.Entry1_showPath.delete('0',tkinter.END)
+    gui.Entry1_showPath.insert(INSERT,files[0].decode('gbk'))
 
 
 # 第一次使用时显示欢迎窗口
-def WelcomeWindow():
+def WelcomeWindow(path):
     try:
-        readingTipsPath = os.getenv('temp') + '\\readingTips.txt' 
-        if os.path.exists(readingTipsPath):
-            return 
         result = messagebox.askokcancel("欢迎使用OCR文字识别","本软件是文字识别软件，可从图片中提取文字并转为语音或翻译。\n\
     注意：语音合成功能和翻译功能只支持英文、中文、数字。\n\
     \t\t\t  是否查看完整版的使用教程？") 
-        if result:
+        if result:# 如果用户点击了“确定”的按钮
             os.system("start https://shimo.im/docs/e485cac745624f42/")
 
         # 创建一个文件，用来标识已阅读第一次使用提示
-        with open(readingTipsPath, 'w') as file:
+        with open(path, 'w') as file:
             file.write("OCR文字识别_已阅读提示")
-            file.close()
     except Exception as e:
         print(e)
 
 
-
-############################ 以下为界面设计代码 ###################################
 if __name__ == "__main__":    
     window = tk.Tk()
+    gui = GUI(window)
+    gui.create_window()
+
     # 拖动文件
     windnd.hook_dropfiles(window,func=DragFile)
-    # 窗口标题
-    window.title('OCR文字识别  最后修改时间：2020-07-24')
     # 调用api设置成由应用程序自己缩放
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
     # 调用api获得当前的缩放因子
@@ -962,165 +1136,16 @@ if __name__ == "__main__":
     #设置缩放因子
     window.tk.call('tk', 'scaling', scaleFactor / 75)
 
-    # 获取屏幕宽度
-    screenW = window.winfo_screenwidth()
-    # 获取屏幕高度
-    screenH = window.winfo_screenheight()
-    # 窗口宽度和高度
-    windowW,windowH = 618 ,350
-    # 设置窗口显示居中
-    window.geometry('%dx%d+%d+%d' % (windowW, windowH,((screenW - windowW) / 2),((screenH - windowH) / 2)))
-
-    # 设置窗口的宽高为固定（不能改变大小）
-    window.resizable(0,0)
-    top = window.winfo_toplevel()
-    style = Style()
-
-    # 右键菜单
-    menubar = Menu(window, tearoff=False)
-
-    # 发音语速滑动条
-    Slider1 = Scale(top, orient='horizontal', from_=0, to=15)
-    Slider1.place(relx=0.472, rely=0.210, relwidth=0.118, relheight=0.098)
-    Slider1.set(5)
-    create_Tip(Slider1,"设置语音合成发音语速")
-
-    # 音量滑动条
-    Slider2 = Scale(top, orient='horizontal', from_=0, to=15)
-    Slider2.place(relx=0.660, rely=0.212, relwidth=0.118, relheight=0.098)
-    Slider2.set(7)
-    create_Tip(Slider2,"设置语音合成发音音量")
-
-    # 识别文字时是否检测图片朝向
-    CheckBox1Var = StringVar(value='1')
-    style.configure('Check1.TCheckbutton',font=('微软雅黑',10))
-    CheckBox1 = Checkbutton(top, text='检测图片朝向', variable=CheckBox1Var, style='Check1.TCheckbutton')
-    CheckBox1.place(relx=0.246, rely=0.215, relwidth=0.17, relheight=0.074)
-
-    # 选择要识别的图片中的语言
-    ComboBox1_lang_List = ['中英文混合','英文','葡萄牙语','法语','德语','意大利语','西班牙语','俄语','日语','韩语']
-    ComboBox1_lang = Combobox(top, state='readonly', values=ComboBox1_lang_List, font=('微软雅黑',10))
-    ComboBox1_lang.place(relx=0.013, rely=0.215, relwidth=0.12, relheight=0.08)
-    ComboBox1_lang.set(ComboBox1_lang_List[0])
-    create_Tip(ComboBox1_lang,"选择要识别的图片中的语言")
-
-    # 选择身份证正反面
-    ComboBox2List = ['照片面','国徽面']
-    ComboBox2 = Combobox(top, state='readonly',values=ComboBox2List, font=('微软雅黑',10))
-    ComboBox2.place(relx=0.14, rely=0.215, relwidth=0.10, relheight=0.08) 
-    ComboBox2.set(ComboBox2List[0])
-    create_Tip(ComboBox2,"身份证识别时选择照片面或国徽面")
-
-    # 发音人
-    ComboBox3_informant_List = ['度小宇','度小美','度逍遥','度丫丫']
-    ComboBox3_informant = Combobox(top, state='readonly', values=ComboBox3_informant_List, font=('微软雅黑',10))
-    ComboBox3_informant.place(relx=0.785, rely=0.215, relwidth=0.1, relheight=0.08)
-    ComboBox3_informant.set(ComboBox3_informant_List[0])
-    create_Tip(ComboBox3_informant,"选择语音合成发音人")
-
-    # 默认选中第一个单选框
-    RadioVar = IntVar()   
-    RadioVar.set(1)
-
-    # 通用文字识别单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton1 = Radiobutton(top, text='通用文字识别', variable=RadioVar, value=1, style='Option1.TRadiobutton')
-    RadioButton1.place(relx=0.010, rely=0.120, relwidth=0.157, relheight=0.074)
-
-    # 通用文字识别（高精度版）单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton2 = Radiobutton(top, text='通用文字识别（高精度版）',variable=RadioVar, value=2, style='Option1.TRadiobutton')
-    RadioButton2.place(relx=0.167, rely=0.120, relwidth=0.273, relheight=0.074)
-
-    # 手写文字识别单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton3 = Radiobutton(top, text='手写文字识别',variable=RadioVar, value=3, style='Option1.TRadiobutton')
-    RadioButton3.place(relx=0.432, rely=0.120, relwidth=0.157, relheight=0.074)
-
-    # 身份证识别单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton4 = Radiobutton(top, text='身份证识别',variable=RadioVar, value=4, style='Option1.TRadiobutton')
-    RadioButton4.place(relx=0.59, rely=0.120, relwidth=0.157, relheight=0.074)
-
-    # 数字识别单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton5 = Radiobutton(top, text='数字识别',variable=RadioVar, value=5, style='Option1.TRadiobutton')
-    RadioButton5.place(relx=0.73, rely=0.120, relwidth=0.131, relheight=0.074)
-
-    # 表格识别单选按钮
-    style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-    RadioButton5 = Radiobutton(top, text='表格文字识别',variable=RadioVar, value=6, style='Option1.TRadiobutton')
-    RadioButton5.place(relx=0.847, rely=0.120, relwidth=0.157, relheight=0.074)
-
-    # 识别按钮
-    style.configure('Command1.TButton',font=('微软雅黑',9))
-    Button1_Start = Button(top, text='识别', command=Command_OCR, style='Command1.TButton')
-    Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07, relheight=0.08)
-    create_Tip(Button1_Start,"识别图片中的文字")
-
-    # 选择按钮
-    style.configure('Command1.TButton',font=('微软雅黑',9))
-    Button2_SelectImage = Button(top, text='选择', command=Command_SelectImage, style='Command1.TButton')
-    Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07, relheight=0.08)
-    create_Tip(Button2_SelectImage,"选择图片路径")
-
-    # 语音合成
-    style.configure('Command1.TButton',font=('微软雅黑',9))
-    button4_StopPlay = Button(top, text='语音合成', command=Command_Speech, style='Command1.TButton')
-    button4_StopPlay.place(relx=0.89, rely=0.215, relwidth=0.105, relheight=0.082)
-    create_Tip(button4_StopPlay,"将文字合成为语音\n单击可发音\n再单击停止发音")
-
-    # 翻译按钮
-    style.configure('Command1.TButton',font=('微软雅黑',9))
-    Button5_Translate = Button(top, text='翻译', style='Command1.TButton')
-    Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07, relheight=0.08)
-    # 绑定鼠标右键事件
-    Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
-    Button5_Translate.bind_all("<Control-Shift-C>", lambda x:Translate_event(x))
-    # 绑定鼠标左键事件
-    Button5_Translate.bind("<Button-1>", lambda x: Translate_event(x))
-    Button5_Translate.bind_all("<Control-Shift-E>", lambda x:Translate_event(x))
-    create_Tip(Button5_Translate,"鼠标左键为英译中，右键单击为中译英\nCTRL+SHIFT+E先识别粘贴剪切板的图片，再英译中\nCTRL+SHIFT+C先识别粘贴剪切板的图片，再中译英")
-
-    # 显示图片的路径
-    Entry1_showPath_Var = StringVar(value='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径')
-    Entry1_showPath = Entry(top, text='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径', textvariable=Entry1_showPath_Var, font=('微软雅黑',9))
-    Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.650, relheight=0.074)
-    # 绑定鼠标右键事件
-    Entry1_showPath.bind("<Button-3>", lambda x: Text1_MouseRightKey(x, Entry1_showPath)) 
-    Entry1_showPath.bind("<Control-v>",lambda x: SaveClipPicture())
-
-    # 显示识别结果
-    Text2_showResult = Text(top, font=('微软雅黑',10), undo = True)
-    Text2_showResult.place(relx=0, rely=0.32, relwidth=0.985, relheight=0.683)
-    # 绑定鼠标右键事件
-    Text2_showResult.bind("<Button-3>", lambda x: Text2_MouseRightKey(x, Text2_showResult)) 
-    Text2_showResult.bind("<Control-v>", lambda x: SaveClipPicture())
-
-    # text控件滚动条
-    Slider3_scroll = tkinter.Scrollbar()
-    Slider3_scroll.place(relx=0.985, rely=0.357, relwidth=0.10, relheight=0.683)
-    # 关联到Text2_showResult控件
-    Slider3_scroll.config(command=Text2_showResult.yview)
-    Text2_showResult.config(yscrollcommand=Slider3_scroll.set)
-
-    style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-    Label1 = Label(top, text='语速：', style='Label1.TLabel')
-    Label1.place(relx=0.408, rely=0.250, relwidth=0.066, relheight=0.051)
-
-    style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-    Label2 = Label(top, text='音量：', style='Label1.TLabel')
-    Label2.place(relx=0.595, rely=0.250, relwidth=0.066, relheight=0.051)
-
-    style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-    Label3 = Label(top, text='图片路径：', style='Label1.TLabel')
-    Label3.place(relx=0.010, rely=0.026, relwidth=0.105, relheight=0.07)
-
 
     # 实例化文字识别类
     ocr = OCR(OCR_API_KEY,OCR_SECRET_KEY,TRAN_APP_ID,TRAN_KEY)
     # 实例化语音合成类
     tts = TTS(TTS_APP_ID,TTS_API_KEY,TTS_SECRET_KEY)
-    WelcomeWindow()
+
+    # 根据用户磁盘中是否存在“OCR文字识别_已阅读提示.txt”来显示欢迎窗口
+    tipFilePath = os.getenv('temp') + '\\OCR文字识别_已阅读提示.txt' 
+    if not os.path.exists(tipFilePath): 
+        WelcomeWindow(tipFilePath)
+
     # 显示窗口
     window.mainloop()
