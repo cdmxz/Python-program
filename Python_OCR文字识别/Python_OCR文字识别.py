@@ -24,19 +24,26 @@ import tkinter.filedialog # 选择文件对话框
 import tkinter as tk # 图形界面
 import time      # 休眠
 import windnd    # 文件拖动
+import winreg    # 读取注册表
 from urllib  import request,parse
 from pathlib import Path # 获取当前目录
 from tkinter import *    # 图形界面
 from tkinter.ttk import *
 from PIL import ImageGrab # 读取剪切板
-playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
-playMusic = False
+
+#  全局变量
+g_playSound = winsound.PlaySound(None, winsound.SND_NODEFAULT)
+g_playMusic = False
+g_speechThread = threading.Thread()
+
 
 '''
 由于申请的是免费api并且多人共用，
 可能会出现识别失败的情况，
 推荐自己去百度ai开放平台（https://ai.baidu.com/）申请api。
 '''
+
+
 # 文字识别Key（可以去百度ai开放平台（https://ai.baidu.com/tech/ocr/general）申请api）
 OCR_API_KEY = "YaOhBFsug5GySthCpUFtLkQk"
 OCR_SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
@@ -443,10 +450,6 @@ class  OCR:
     filePath图片路径"
 
         try:
-            # 如果有一项参数为空
-            if IsEmpty(filePath):
-                raise Exception("输入参数不正确！")
-
             # 判断文件是否存在
             if not os.path.exists(filePath):
                 raise Exception("文件不存在！")
@@ -482,14 +485,8 @@ class  OCR:
                 percent = r['result']['percent']
                 retMsg = r['result']['ret_msg']
             
-                # 获取当前时间，用作音频文件的文件名
-                curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-                # 下载表格时所存放的目录
-                fileDir = os.path.abspath('.') + '\\OCR文字识别_下载的表格'
-                if not os.path.exists(fileDir):
-                    os.mkdir(fileDir) # 目录不存在则创建
-                fileName = fileDir + '\\' + curr_time + '.xls'
-        
+                fileName = GetFileName("\\OCR文字识别_下载的表格","xls")          
+
                 return "识别进度：" + str(percent) + "%\n识别结果：" + retMsg + "\n是否下载：" + self.DownFile(url,fileName) + "\n下载地址：" + url
             else:
                 return "识别失败！"
@@ -543,7 +540,25 @@ class TTS:
             else:
                 return result
 
-    def Speech(self,Text,Vol,Per,Spd):
+    def PlayMusic(self,musicName):
+        # 全局变量
+        global g_playMusic,g_playSound
+
+        try:
+            # 播放wav文件
+            g_playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
+            g_playMusic = True
+            sec = float(self.GetWavLength(musicName))
+            # 休眠
+            time.sleep(sec)
+            g_playMusic = False
+
+        except Exception as e:
+            g_playMusic = False
+            messagebox.showerror("播放音频文件失败",e.args[0])
+
+
+    def Speech(self,Text,Vol,Per,Spd,control=None):
             "文字转语音 （只支持中英文和数字）\n\
         Text 要合成的文本内容\n\
         Vol  音量大小\n\
@@ -551,8 +566,9 @@ class TTS:
         Spd  语速快慢"
 
             try:
-                # 全局变量
-                global playMusic,playSound
+                if control != None:
+                    # 设置按钮“gui.button4_Speech（语音合成）”状态为禁用
+                    control["state"] = "disabled"
 
                 #如果Text为空
                 if IsEmpty(Text):
@@ -581,20 +597,19 @@ class TTS:
                 # 发送post请求
                 f = request.urlopen(req)
                 result = f.read()
+
+                if control != None:
+                    # 设置按钮“gui.button4_Speech（语音合成）”状态为启用
+                    control["state"] = "normal"
+                
                 # 将返回的header信息取出并生成一个字典
                 headers = dict((name.lower(), value) for name, value in f.headers.items())
                 # 如果返回的header含有“Content-Type: audio/wav”，则成功
                 if "audio/wav" == headers['content-type']:
                     with open(musicName, 'wb') as of:
                             of.write(result)
-         
-                    # 播放wav文件
-                    playSound = winsound.PlaySound(musicName, winsound.SND_ASYNC)
-                    playMusic = True
-                    sec = float(self.GetWavLength(musicName))
-                    # 休眠
-                    time.sleep(sec)
-                    playMusic = False
+                    # 播放下载的音频文件
+                    self.PlayMusic(musicName)
                 else:
                     err = json.loads(result)
                     if err.get("err_detail") != None:
@@ -603,8 +618,9 @@ class TTS:
                         raise Exception("语音合成失败！")
 
             except Exception as e:
-                playMusic = False
-                messagebox.showerror("文字转语音失败", e.args[0])
+                if control != None:
+                    control["state"] = "normal"
+                messagebox.showerror("语音合成失败", e.args[0])
 
     # 将发音人名称转为数字
     def InformantToNumber(self,informant):
@@ -682,7 +698,7 @@ class GUI:
         # 获取屏幕高度
         self.screenH = self.root.winfo_screenheight()
         # 窗口宽度和高度
-        self.windowW,self.windowH = 618 ,400
+        self.windowW,self.windowH = 650 ,400
         # 设置窗口显示居中
         self.root.geometry('%dx%d+%d+%d' % (self.windowW, self.windowH,((self.screenW - self.windowW) / 2),((self.screenH - self.windowH) / 2)))
 
@@ -767,28 +783,28 @@ class GUI:
         self.RadioButton5 = Radiobutton(self.top, text='表格文字识别',variable=self.RadioVar, value=6, style='Option1.TRadiobutton')
         self.RadioButton5.place(relx=0.847, rely=0.120, relwidth=0.157, relheight=0.074)
 
-        # 识别按钮
-        self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.Button1_Start = Button(self.top, text='识别', command=Command_OCR, style='Command1.TButton')
-        self.Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07, relheight=0.08)
-        create_Tip(self.Button1_Start,"识别图片中的文字")
-
         # 选择按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
         self.Button2_SelectImage = Button(self.top, text='选择', command=Command_SelectImage, style='Command1.TButton')
-        self.Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07, relheight=0.08)
+        self.Button2_SelectImage.place(relx=0.7, rely=0.021, relwidth=0.07, relheight=0.08)
+        #self.Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07,
+        #relheight=0.08)
         create_Tip(self.Button2_SelectImage,"选择图片路径")
 
-        # 语音合成
+        # 识别按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.button4_StopPlay = Button(self.top, text='语音合成', command=Command_Speech,style='Command1.TButton')
-        self.button4_StopPlay.place(relx=0.89, rely=0.215, relwidth=0.105, relheight=0.082)
-        create_Tip(self.button4_StopPlay,"将文字合成为语音\n单击可发音\n再单击停止发音")
+        self.Button1_Start = Button(self.top, text='识别', command=Command_OCR, style='Command1.TButton')
+        self.Button1_Start.place(relx=0.783, rely=0.021, relwidth=0.07, relheight=0.08)
+        #self.Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07,
+        #relheight=0.08)
+        create_Tip(self.Button1_Start,"识别图片中的文字")
 
         # 翻译按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
         self.Button5_Translate = Button(self.top, text='翻译', style='Command1.TButton')
-        self.Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07, relheight=0.08)
+        self.Button5_Translate.place(relx=0.855, rely=0.021, relwidth=0.07, relheight=0.08)
+        #self.Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07,
+        #relheight=0.08)
         # 绑定鼠标右键事件
         self.Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
         self.Button5_Translate.bind_all("<Control-Shift-C>", lambda x:Translate_event(x))
@@ -797,10 +813,31 @@ class GUI:
         self.Button5_Translate.bind_all("<Control-Shift-E>", lambda x:Translate_event(x))
         create_Tip(self.Button5_Translate,"鼠标左键为英译中，右键单击为中译英\nCTRL+SHIFT+E先识别粘贴剪切板的图片，再英译中\nCTRL+SHIFT+C先识别粘贴剪切板的图片，再中译英")
 
+        # 截图按钮
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.Button6_Screen = Button(self.top, text='截图', style='Command1.TButton')
+        self.Button6_Screen.place(relx=0.927, rely=0.021, relwidth=0.07, relheight=0.08)
+        # 绑定鼠标右键事件
+        self.Button6_Screen.bind("<Button-3>", lambda x: Screen(x))
+        # 绑定鼠标左键事件
+        self.Button6_Screen.bind("<Button-1>", lambda x: Screen(x))
+        # 绑定快捷键事件
+        self.Button6_Screen.bind_all("<Control-Shift-P>", lambda x:Screen(x))
+        self.Button6_Screen.bind_all("<Control-Shift-O>", lambda x:Screen(x))
+        create_Tip(self.Button6_Screen,"鼠标左键截图并识别，右键截图并英译中\nCTRL+SHIFT+P先截图，再英译中\nCTRL+SHIFT+O先截图，再中译英")
+
+        # 语音合成按钮
+        self.style.configure('Command1.TButton',font=('微软雅黑',9))
+        self.button4_Speech = Button(self.top, text='语音合成', command=Command_Speech,style='Command1.TButton')
+        self.button4_Speech.place(relx=0.89, rely=0.215, relwidth=0.105, relheight=0.082)
+        create_Tip(self.button4_Speech,"将文字合成为语音\n单击可发音\n再单击停止发音")
+
         # 显示图片的路径
-        self.Entry1_showPath_Var = StringVar(value='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径')
-        self.Entry1_showPath = Entry(self.top, text='请通过点击“选择”按钮、拖动图片到此处、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
-        self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.650, relheight=0.074)
+        self.Entry1_showPath_Var = StringVar(value='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径')
+        self.Entry1_showPath = Entry(self.top, text='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
+        self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.585, relheight=0.074)
+        #self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.650,
+        #relheight=0.074)
         # 绑定鼠标右键事件
         self.Entry1_showPath.bind("<Button-3>", lambda x: Entry1_MouseRightKey(x, self.Entry1_showPath)) 
         self.Entry1_showPath.bind("<Control-v>",lambda x: SaveClipImage())
@@ -832,9 +869,168 @@ class GUI:
         self.Label3.place(relx=0.010, rely=0.026, relwidth=0.105, relheight=0.07)
 
 
+class SelectionArea:
+    def __init__(self, canvas: tk.Canvas):
+        self.canvas = canvas
+
+        self.start_x = None
+        self.start_y = None
+        self.end_x = None
+        self.end_y = None
+
+    def empty(self):
+        return self.start_x is None or self.end_x is None
+
+    def setStart(self, x, y):
+        # 开始的坐标
+        self.start_x = x
+        self.start_y = y
+
+    def setEnd(self, x, y):
+        # 结束的坐标
+        self.end_x = x
+        self.end_y = y
+
+    def box(self):
+        "计算要绘制的矩形的坐标"
+        lt_x = min(self.start_x, self.end_x)
+        lt_y = min(self.start_y, self.end_y)
+        rb_x = max(self.start_x, self.end_x)
+        rb_y = max(self.start_y, self.end_y)
+        return lt_x, lt_y, rb_x, rb_y
+
+    def center(self):
+        center_x = (self.start_x + self.end_x) / 2
+        center_y = (self.start_y + self.end_y) / 2
+        return center_x, center_y
+
+    def setStartPoint(self, x, y):
+        # 清空画布
+        self.canvas.delete('area', 'lt_txt', 'rb_txt')
+        # 记录开始的坐标
+        self.setStart(x, y)
+        # 显示坐标文字
+        self.canvas.create_text(x, y - 10, text=f'鼠标右键或ESC键退出\n松开鼠标左键保存\n起点坐标：{x}, {y}',font=("微软雅黑","12","bold"), fill='red', tag='lt_txt')
+
+    def updateEndPoint(self, x, y):
+        "绘制矩形"
+        self.setEnd(x, y)
+        # 清空画布
+        self.canvas.delete('area', 'rb_txt')
+        box_area = self.box()
+        # 绘制选择的区域
+        self.canvas.create_rectangle(*box_area, fill='black', outline='red', width=2, tags="area")
+        self.canvas.create_text(x, y + 10, text=f'当前坐标：{x}, {y}',font=("微软雅黑","12","bold"), fill='red', tag='rb_txt')
+
+class ScreenShot:
+    """截图类"""
+    def __init__(self,savePath):
+        self.win = tk.Tk()
+        # 图片保存路径
+        self.savePath = savePath
+
+        # 获取屏幕宽度、高度、缩放比例
+        self.width = self.win.winfo_screenwidth()
+        self.height = self.win.winfo_screenheight()
+        self.screenScaling = self.getScreenScaling()
+
+        # 窗体设置无边框、在Windows系统任务栏上消失
+        self.win.overrideredirect(True)
+        self.win.attributes('-alpha', 0.6)# 透明度
+
+        # 当前是否正在选择矩形区域
+        self.is_selecting = False
+
+    def create(self):
+        # 绑定按快捷键 鼠标右键和ESC键退出
+        self.win.bind('<Escape>', self.exit)               # ESC键按下
+        self.win.bind('<Button-3>', self.exit)             # 鼠标右键按下
+        self.win.bind('<Button-1>', self.startSelect)      # 鼠标左键按下
+        self.win.bind('<ButtonRelease-1>', self.selectDone)# 鼠标左键松开
+        self.win.bind('<Motion>', self.changeSelectionArea)# 鼠标移动
+
+        # 创建一块画布
+        self.canvas = tk.Canvas(self.win, width=self.width,height=self.height)
+        self.canvas.pack()
+        self.area = SelectionArea(self.canvas)
+        self.win.mainloop()
+
+    def clear(self):
+        # 清空画布
+        self.canvas.delete('area', 'lt_txt', 'rb_txt')
+        # 设置窗口的透明度
+        self.win.attributes('-alpha', 0)
+
+    def startSelect(self, event):
+        "开始截图"
+        self.is_selecting = True
+        # 记录鼠标左键第一次按下时的位置
+        self.area.setStartPoint(event.x, event.y)
+
+    def changeSelectionArea(self, event):
+        "鼠标移动时"
+        if self.is_selecting:# 如果正在选择矩形区域
+            self.area.updateEndPoint(event.x, event.y)# 刷新当前鼠标坐标
+
+    def selectDone(self, event):
+        "选择矩形区域完成"
+        self.is_selecting = False
+        self.saveScreenShot(event)
+
+    def saveScreenShot(self, event):
+        "保存图片"
+
+        # 先捕获选区的区域的内容
+        if self.area.empty():
+            return None
+       
+        # 获得选取的矩形大小
+        box_area = [x * self.screenScaling for x in self.area.box()]
+        self.clear()
+
+        # 截图并保存
+        img = ImageGrab.grab(box_area)
+        img.save(self.savePath,quality=95, subsampling=0)
+        # 关闭当前窗口，释放资源
+        self.win.quit()
+        self.win.destroy()
+
+    def exit(self, event):
+         # 关闭当前窗口，释放资源
+        self.clear()
+        self.win.quit()
+        self.win.destroy()
+
+    def getScreenScaling(self):
+        "获取屏幕缩放比"
+        # 通过注册表HKEY_CURRENT_USER\Control
+        # Panel\Desktop\WindowMetrics\AppliedDPI获取缩放比
+        hkey = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER,r"Control Panel\Desktop\WindowMetrics",0,winreg.KEY_READ)
+        val = winreg.QueryValueEx(hkey,'AppliedDPI')
+        winreg.CloseKey(hkey)
+        return round(val[0] / 96.0, 2)
+
+
+def GetFileName(dirName,ext):
+    "返回当前时间的文件名\n\
+    dirName 文件夹名称\n\
+    ext     文件扩展名"
+
+    # 获取当前时间，用于保存文件时当作文件名
+    curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
+    fileDir = os.path.abspath('.') + '\\' + dirName
+    if not os.path.exists(fileDir):
+        os.mkdir(fileDir) # 目录不存在则创建
+
+    return fileDir + '\\' + curr_time + '.' + ext
+
+
 # 翻译
 def Translate(Text,From,To,Salt):
     "翻译"
+    if IsEmpty(Text):
+        return
+
     appid = TRAN_APP_ID + Text + Salt + TRAN_KEY
     # 获取md5编码
     m = hashlib.md5()
@@ -866,7 +1062,7 @@ def Translate_event(event):
     replace = False # 是否替换掉翻译源内容
     salt = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M%S')
     # 先保存当前选择的选项
-    gui.RadioButton_Var = gui.RadioVar.get()
+    RadioButton_Var = gui.RadioVar.get()
     # 设置当前识别选项为：通用文字识别（高精度版）
     gui.RadioVar.set(2)
 
@@ -886,7 +1082,7 @@ def Translate_event(event):
         replace = False
         if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')): # 如果Text控件为空
             if (not IsEmpty(gui.Entry1_showPath_Var.get())) and os.path.exists(gui.Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
-                    Command_OCR()                      # 先文字识别再翻译
+                    Command_OCR() # 先文字识别再翻译
             else:# 如果Text控件为空和图片路径为空或路径无效
                 gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
 CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
@@ -911,7 +1107,7 @@ CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切�
         Command_OCR()# 文字识别
 
     # 恢复原来的文字识别选项
-    gui.RadioVar.set(gui.RadioButton_Var)
+    gui.RadioVar.set(RadioButton_Var)
     # 调用百度api翻译文字
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
     if replace: # 是否替换原内容
@@ -920,20 +1116,70 @@ CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切�
     else:
         gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
 
+  
+# 截图
+def Screen(event):
+    pictureName = GetFileName("OCR文字识别_保存的图片","png")
+    salt = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M%S')
+    try:
+        # 截图
+        sc = ScreenShot(pictureName)
+        sc.create()
+    except Exception as e:
+        print(e.args[0])
+        sc.win.quit() 
+        sc.win.destroy()
+        messagebox.showerror("OCR文字识别","截图失败！")
+        return
 
-# 创建一个新线程
+    # 如果文件不存在，则视为用户取消截图
+    if not os.path.exists(pictureName):
+        return
+
+    # 将保存的图片路径显示到Entry1_showPath
+    if gui.Entry1_showPath_Var.get() != "":
+        gui.Entry1_showPath.delete('0', tkinter.END)
+    gui.Entry1_showPath.insert(INSERT, pictureName)
+     # 文字识别
+    Command_OCR()
+
+    # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
+    if event.type == '4':
+        # 鼠标左键（文字识别，上面语句已完成文字识别，所以直接返回）
+        if event.num == 1:
+          return
+        # 鼠标右键（英译中）
+        elif event.num == 3:
+            From = "en"
+            to = "zh"
+        else:
+            return
+    else: # 如果为键盘事件，则通过判断按下的快捷键，来选择翻译源语言和目标语言
+        if event.keysym == 'P':# 快捷键CTRL+SHIFT+P（中译英）
+           From = "zh"
+           to = "en"
+        elif event.keysym == 'O': # 快捷键CTRL+SHIFT+O（英译中）
+           From = "en"
+           to = "zh" 
+
+    result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
+    gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
+
+
+# 创建一个新线程，用于语音合成
 def CreateThread(text):
-    global newThread
-    newThread = threading.Thread(target=tts.Speech, args=(text.rstrip('\n'),gui.Slider2.get(),tts.InformantToNumber(gui.ComboBox3_informant.get()),gui.Slider1.get()))
+    global g_speechThread
+
+    g_speechThread = threading.Thread(target=tts.Speech, args=(text.rstrip('\n'),gui.Slider2.get(),tts.InformantToNumber(gui.ComboBox3_informant.get()),gui.Slider1.get(),gui.button4_Speech))
     # 父线程退出时，子线程也退出
-    newThread.daemon = True
-    newThread.start()
+    g_speechThread.daemon = True
+    g_speechThread.start()
 
 
 # 语音合成
 def Command_Speech():
     "语音合成"
-    global playMusic,playSound,newThread
+    global g_playMusic,g_playSound,g_speechThread
 
     # 如果要合成语音的内容为空
     if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')):
@@ -941,13 +1187,14 @@ def Command_Speech():
 使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。\n4、单击“语音合成”按钮可停止发音。") # 向Text控件插入提示内容
         #return
 
-    if not playMusic:
+    winsound.PlaySound(g_playSound, winsound.SND_PURGE)
+    if not g_playMusic:
         CreateThread(gui.Text1_showResult.get('0.0', tkinter.END))
     else:
         # 终止线程
-        winsound.PlaySound(playSound, winsound.SND_PURGE)
-        playMusic = False
-        newThread.join(0)
+        winsound.PlaySound(g_playSound, winsound.SND_PURGE)
+        g_speechThread.join(0)
+        g_playMusic = False
 
 
 # 识别图片中的文字
@@ -964,14 +1211,14 @@ def Command_OCR():
             messagebox.showinfo("图片识别","路径无效！") # 弹出提示
             return
 
-    global playMusic,playSound,newThread
+    global g_playMusic,g_playSound,g_speechThread
 
     # 如果文字转语音正在播放，则关闭
-    if playMusic:
+    if g_playMusic:
         # 终止线程
-        winsound.PlaySound(playSound, winsound.SND_PURGE)
-        playMusic = False
-        newThread.join(0)
+        winsound.PlaySound(g_playSound, winsound.SND_PURGE)
+        g_playMusic = False
+        g_speechThread.join(0)
 
     if gui.RadioVar.get() == 1:  # 通用文字识别
         re = ocr.GeneralBasic(gui.Entry1_showPath_Var.get(),ocr.ChToEn(gui.ComboBox1_lang.get()),gui.CheckBox1Var.get())
@@ -1038,17 +1285,18 @@ def Paste(editor, event=None):
     editor.event_generate('<<Paste>>')
     SaveClipImage()
 
-
+  
+# 朗读选择的内容
 def SpeechSelectCont(editor, event=None):
     try:
         selectText = gui.Text1_showResult.selection_get()
-        global playMusic,playSound,newThread
+        global g_playMusic,g_playSound,g_speechThread
 
         # 如果线程在运行则终止线程
-        if  playMusic:
-            winsound.PlaySound(playSound, winsound.SND_PURGE)
-            playMusic = False
-            newThread.join(0)
+        if  g_playMusic:
+            winsound.PlaySound(g_playSound, winsound.SND_PURGE)
+            g_playMusic = False
+            g_speechThread.join(0)
         # 文字转语音
         CreateThread(selectText)
     except:
@@ -1081,20 +1329,15 @@ def SaveClipImage():
     # 如果im=None则说明剪切板没有图片
     if im == None:
         return None
-    # 获取当前时间，用于保存文件时当作文件名
-    curr_time = datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d_%H_%M_%S')
-    # 下载表格时所存放的目录
-    fileDir = os.path.abspath('.') + '\\OCR文字识别_保存的剪切板图片'
-    if not os.path.exists(fileDir):
-        os.mkdir(fileDir) # 目录不存在则创建
-    pictureName = fileDir + '\\' + curr_time + '.png'
+    
+    pictureName = GetFileName("OCR文字识别_保存的图片","png")
     # 保存剪切板的图片
     im.save(pictureName, 'PNG')
     print(pictureName)
     # 将保存的图片路径显示到Entry1_showPath
-    if Entry1_showPath_Var.get() != "":
-        Entry1_showPath.delete('0', tkinter.END)
-    Entry1_showPath.insert(INSERT, pictureName)
+    if gui.Entry1_showPath_Var.get() != "":
+        gui.Entry1_showPath.delete('0', tkinter.END)
+    gui.Entry1_showPath.insert(INSERT, pictureName)
     return pictureName
 
 
@@ -1141,6 +1384,7 @@ if __name__ == "__main__":
     ocr = OCR(OCR_API_KEY,OCR_SECRET_KEY,TRAN_APP_ID,TRAN_KEY)
     # 实例化语音合成类
     tts = TTS(TTS_APP_ID,TTS_API_KEY,TTS_SECRET_KEY)
+
 
     # 根据用户磁盘中是否存在“OCR文字识别_已阅读提示.txt”来显示欢迎窗口
     tipFilePath = os.getenv('temp') + '\\OCR文字识别_已阅读提示.txt' 
