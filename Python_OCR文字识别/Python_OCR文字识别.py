@@ -983,14 +983,14 @@ class ScreenShot:
         # 先捕获选区的区域的内容
         if self.area.empty():
             return None
-       
+    
         # 获得选取的矩形大小
         box_area = [x * self.screenScaling for x in self.area.box()]
         self.clear()
 
         # 截图并保存
         img = ImageGrab.grab(box_area)
-        img.save(self.savePath,quality=95, subsampling=0)
+        img.save(self.savePath,'png',quality=95, subsampling=0)
         # 关闭当前窗口，释放资源
         self.win.quit()
         self.win.destroy()
@@ -1116,7 +1116,7 @@ CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切�
     else:
         gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
 
-  
+
 # 截图
 def Screen(event):
     pictureName = GetFileName("OCR文字识别_保存的图片","png")
@@ -1163,7 +1163,8 @@ def Screen(event):
            to = "zh" 
 
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
-    gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
+    if not IsEmpty(result):
+        gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
 
 
 # 创建一个新线程，用于语音合成
