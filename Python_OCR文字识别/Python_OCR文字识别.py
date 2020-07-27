@@ -2,8 +2,8 @@
 '''
         此为桌面GUI程序，不能在浏览器使用，请下载到电脑并安装必备的库后使用海龟编辑器运行。
 开源地址：https://cdmxz.github.io
-已在 python3.8 32bit 测试过，可正常使用 
-使用前请安装必备的库：PIL、windnd、requests
+已在 win10 2004 + python3.8 32bit 环境下测试过，可正常使用。
+使用前请安装必备的库：PIL、windnd、requests。
 '''
 
 import ctypes
@@ -11,23 +11,23 @@ import os
 import hashlib
 import sys
 import inspect
-import winsound  # 播放wav文件
+import winsound   # 播放wav文件
 import wave
-import contextlib# 获取wav文件时长
-import threading # 多线程
-import datetime  # 获取当前时间
-import requests  # HTTP库
-import base64    # base64编码解码
-import json      # 解析json数据
+import contextlib # 获取wav文件时长
+import threading  # 多线程
+import datetime   # 获取当前时间
+import requests   # HTTP库
+import base64     # base64编码解码
+import json       # 解析json数据
 import tkinter.messagebox # 弹窗
 import tkinter.filedialog # 选择文件对话框
-import tkinter as tk # 图形界面
-import time      # 休眠
-import windnd    # 文件拖动
-import winreg    # 读取注册表
+import tkinter as tk      # 图形界面
+import time               # 休眠
+import windnd             # 文件拖动
+import winreg             # 读取注册表
 from urllib  import request,parse
-from pathlib import Path # 获取当前目录
-from tkinter import *    # 图形界面
+from pathlib import Path  # 获取当前目录
+from tkinter import *     # 图形界面
 from tkinter.ttk import *
 from PIL import ImageGrab # 读取剪切板
 
@@ -40,20 +40,20 @@ g_speechThread = threading.Thread()
 '''
 由于申请的是免费api并且多人共用，
 可能会出现识别失败的情况，
-推荐自己去百度ai开放平台（https://ai.baidu.com/）申请api。
+推荐自己去百度ai开放平台（https://ai.baidu.com/）申请key。
 '''
 
 
-# 文字识别Key（可以去百度ai开放平台（https://ai.baidu.com/tech/ocr/general）申请api）
+# 文字识别Key（可以去百度ai开放平台（https://ai.baidu.com/tech/ocr/general）申请key）
 OCR_API_KEY = "YaOhBFsug5GySthCpUFtLkQk"
 OCR_SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
 
-# 语音合成Key（可以去百度ai开放平台（https://ai.baidu.com/tech/speech/tts_online）申请api）
+# 语音合成Key（可以去百度ai开放平台（https://ai.baidu.com/tech/speech/tts_online）申请key）
 TTS_APP_ID = "19685928"
 TTS_API_KEY = "qk3y9G2FQLrQsCa9v9NzzW8h"
 TTS_SECRET_KEY = "qtYsvvdEGgQ6EzxVSFuYRvl8NmzVihy1"
 
-# 翻译Key（可以去百度翻译开放平台（https://api.fanyi.baidu.com/product/11）申请api）
+# 翻译Key（可以去百度翻译开放平台（https://api.fanyi.baidu.com/product/11）申请key）
 TRAN_APP_ID = "20200424000429104"
 TRAN_KEY = "5mzyraBsLRk2yfGQMhXJ"
 
@@ -646,7 +646,7 @@ class ControlTip:
     def __init__(self,widget):
         self.widget = widget
         self.tip_window = None
- 
+
     def show_tip(self,tip_text):
         "在控件中显示提示"
         if self.tip_window or not tip_text:
@@ -672,7 +672,7 @@ class ControlTip:
         self.tip_window = None
         if tw:
             tw.destroy()
- 
+
 def create_Tip(widget, text):
     "在控件中显示或隐藏提示"
     tip = ControlTip(widget)
@@ -787,31 +787,26 @@ class GUI:
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
         self.Button2_SelectImage = Button(self.top, text='选择', command=Command_SelectImage, style='Command1.TButton')
         self.Button2_SelectImage.place(relx=0.7, rely=0.021, relwidth=0.07, relheight=0.08)
-        #self.Button2_SelectImage.place(relx=0.766, rely=0.021, relwidth=0.07,
-        #relheight=0.08)
         create_Tip(self.Button2_SelectImage,"选择图片路径")
 
         # 识别按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
         self.Button1_Start = Button(self.top, text='识别', command=Command_OCR, style='Command1.TButton')
         self.Button1_Start.place(relx=0.783, rely=0.021, relwidth=0.07, relheight=0.08)
-        #self.Button1_Start.place(relx=0.85, rely=0.021, relwidth=0.07,
-        #relheight=0.08)
+        self.Button1_Start.bind_all("<Control-Shift-V>",lambda x:PastePictureAndOCR(x))
         create_Tip(self.Button1_Start,"识别图片中的文字")
 
         # 翻译按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
         self.Button5_Translate = Button(self.top, text='翻译', style='Command1.TButton')
         self.Button5_Translate.place(relx=0.855, rely=0.021, relwidth=0.07, relheight=0.08)
-        #self.Button5_Translate.place(relx=0.925, rely=0.021, relwidth=0.07,
-        #relheight=0.08)
         # 绑定鼠标右键事件
         self.Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
         self.Button5_Translate.bind_all("<Control-Shift-C>", lambda x:Translate_event(x))
         # 绑定鼠标左键事件
         self.Button5_Translate.bind("<Button-1>", lambda x: Translate_event(x))
         self.Button5_Translate.bind_all("<Control-Shift-E>", lambda x:Translate_event(x))
-        create_Tip(self.Button5_Translate,"鼠标左键为英译中，右键单击为中译英\nCTRL+SHIFT+E先识别粘贴剪切板的图片，再英译中\nCTRL+SHIFT+C先识别粘贴剪切板的图片，再中译英")
+        create_Tip(self.Button5_Translate,"鼠标左键为英译中\n鼠标右键为中译英\nCTRL+SHIFT+E 识别粘贴剪切板的图片，再英译中\nCTRL+SHIFT+C 识别粘贴剪切板的图片，再中译英")
 
         # 截图按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
@@ -824,7 +819,7 @@ class GUI:
         # 绑定快捷键事件
         self.Button6_Screen.bind_all("<Control-Shift-P>", lambda x:Screen(x))
         self.Button6_Screen.bind_all("<Control-Shift-O>", lambda x:Screen(x))
-        create_Tip(self.Button6_Screen,"鼠标左键截图并识别，右键截图并英译中\nCTRL+SHIFT+P先截图，再英译中\nCTRL+SHIFT+O先截图，再中译英")
+        create_Tip(self.Button6_Screen,"鼠标左键 截图并识别\n鼠标右键 截图并英译中\nCTRL+SHIFT+P 截图，再中译英\nCTRL+SHIFT+O 截图，再英译中")
 
         # 语音合成按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
@@ -836,8 +831,6 @@ class GUI:
         self.Entry1_showPath_Var = StringVar(value='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径')
         self.Entry1_showPath = Entry(self.top, text='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
         self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.585, relheight=0.074)
-        #self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.650,
-        #relheight=0.074)
         # 绑定鼠标右键事件
         self.Entry1_showPath.bind("<Button-3>", lambda x: Entry1_MouseRightKey(x, self.Entry1_showPath)) 
         self.Entry1_showPath.bind("<Control-v>",lambda x: SaveClipImage())
@@ -1012,7 +1005,7 @@ class ScreenShot:
 
 
 def GetFileName(dirName,ext):
-    "返回当前时间的文件名\n\
+    "返回以当前时间为文件名的路径\n\
     dirName 文件夹名称\n\
     ext     文件扩展名"
 
@@ -1059,61 +1052,45 @@ def Translate(Text,From,To,Salt):
 def Translate_event(event):
     # From 源语言，To 目标语言
     From,To = '',''
-    replace = False # 是否替换掉翻译源内容
     salt = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M%S')
-    # 先保存当前选择的选项
-    RadioButton_Var = gui.RadioVar.get()
-    # 设置当前识别选项为：通用文字识别（高精度版）
-    gui.RadioVar.set(2)
 
     # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
     # 再判断Text控件是否为空 - （如果为空）判断图片路径不为空并且路有效 - 先识别图片文字再翻译
     if event.type == '4':
-        # 鼠标左键（英译中）
-        if event.num == 1:
-           From = "en"
-           to = "zh"
-        # 鼠标右键（中译英）
-        elif event.num == 3:
-            From = "zh"
-            to = "en"
+        if event.num == 1: # 鼠标左键（英译中）
+           From,to = "en","zh"
+        elif event.num == 3:# 鼠标右键（中译英）
+            From ,to = "zh","en"
         else:
             return
-        replace = False
         if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')): # 如果Text控件为空
             if (not IsEmpty(gui.Entry1_showPath_Var.get())) and os.path.exists(gui.Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
                     Command_OCR() # 先文字识别再翻译
-            else:# 如果Text控件为空和图片路径为空或路径无效
-                gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
-CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
-                From = "zh"
-                to = "en"
-                #return
+            else:                 # 如果Text控件为空和图片路径为空或路径无效
+                gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，\
+                或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
+                CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
+
+                From,to = "zh","en"
+
     else: # 如果为键盘事件，则通过判断按下的快捷键，来选择翻译源语言和目标语言，
           # 然后保存剪切板的图片 - 先识别图片文字再翻译
         if event.keysym == 'C':# 快捷键CTRL+SHIFT+C（中译英）
-           From = "zh"
-           to = "en"
+            From,to = "zh","en"
+
         elif event.keysym == 'E': # 快捷键CTRL+SHIFT+E（英译中）
-           From = "en"
-           to = "zh" 
-        #replace = True # 替换掉翻译源内容
+            From,to = "en","zh"
 
-        # 将剪切板中的图片保存到本地
-        fileName = SaveClipImage()
-        if IsEmpty(fileName):
-            #Text1_showResult.insert(INSERT,"保存剪切版中的图片失败！") # 向Text控件插入提示内容
+        
+        fileName = SaveClipImage()# 将剪切板中的图片保存到本地
+        if IsEmpty(fileName):     # 如果文件名为空
             return 
-        Command_OCR()# 文字识别
 
-    # 恢复原来的文字识别选项
-    gui.RadioVar.set(RadioButton_Var)
+        Command_OCR()             # 调用文字识别
+
     # 调用百度api翻译文字
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
-    if replace: # 是否替换原内容
-        gui.Text1_showResult.delete('0.0',tkinter.END)
-        gui.Text1_showResult.insert(INSERT, result)
-    else:
+    if not IsEmpty(result):
         gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
 
 
@@ -1144,23 +1121,18 @@ def Screen(event):
     Command_OCR()
 
     # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
-    if event.type == '4':
-        # 鼠标左键（文字识别，上面语句已完成文字识别，所以直接返回）
-        if event.num == 1:
+    if event.type == '4':  
+        if event.num == 1: # 鼠标左键（文字识别，上面语句已完成文字识别，所以直接返回）
           return
-        # 鼠标右键（英译中）
-        elif event.num == 3:
-            From = "en"
-            to = "zh"
+        elif event.num == 3:# 鼠标右键（英译中）
+            From,to = "en","zh"
         else:
             return
     else: # 如果为键盘事件，则通过判断按下的快捷键，来选择翻译源语言和目标语言
-        if event.keysym == 'P':# 快捷键CTRL+SHIFT+P（中译英）
-           From = "zh"
-           to = "en"
+        if event.keysym == 'P':   # 快捷键CTRL+SHIFT+P（中译英）
+           From,to = "zh","en"
         elif event.keysym == 'O': # 快捷键CTRL+SHIFT+O（英译中）
-           From = "en"
-           to = "zh" 
+            From,to = "en","zh" 
 
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
     if not IsEmpty(result):
@@ -1196,6 +1168,16 @@ def Command_Speech():
         winsound.PlaySound(g_playSound, winsound.SND_PURGE)
         g_speechThread.join(0)
         g_playMusic = False
+
+
+def PastePictureAndOCR(event):
+    "粘贴剪切板图片并识别文字"
+    if event.type == '2':
+        if event.keysym == 'V':# 快捷键CTRL+SHIFT+V
+            fileName = SaveClipImage()# 将剪切板中的图片保存到本地
+            if not IsEmpty(fileName):     # 如果文件名不为空
+                Command_OCR()             # 调用文字识别
+
 
 
 # 识别图片中的文字
@@ -1333,7 +1315,7 @@ def SaveClipImage():
     
     pictureName = GetFileName("OCR文字识别_保存的图片","png")
     # 保存剪切板的图片
-    im.save(pictureName, 'PNG')
+    im.save(pictureName, 'png',quality=100)
     print(pictureName)
     # 将保存的图片路径显示到Entry1_showPath
     if gui.Entry1_showPath_Var.get() != "":
@@ -1347,7 +1329,7 @@ def DragFile(files):
     # 将选择的图片路径显示到Text_showResult控件
     if gui.Entry1_showPath_Var.get() != "":
         gui.Entry1_showPath.delete('0',tkinter.END)
-    gui.Entry1_showPath.insert(INSERT,files[0].decode('gbk'))
+    gui.Entry1_showPath.insert(INSERT,files[0].decode('ANSI'))# 使用ansi是为了避免本地化问题，导致乱码
 
 
 # 第一次使用时显示欢迎窗口
