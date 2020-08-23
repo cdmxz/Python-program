@@ -695,7 +695,7 @@ class GUI:
 
     def create_window(self):
          # 窗口标题
-        self.root.title('OCR文字识别  最后修改时间：2020-07-25')
+        self.root.title('OCR文字识别  最后修改时间：2020-08-23')
         # 获取屏幕宽度
         self.screenW = self.root.winfo_screenwidth()
         # 获取屏幕高度
