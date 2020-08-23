@@ -19,16 +19,15 @@ import datetime   # 获取当前时间
 import requests   # HTTP库
 import base64     # base64编码解码
 import json       # 解析json数据
-import tkinter.messagebox # 弹窗
-import tkinter.filedialog # 选择文件对话框
 import tkinter as tk      # 图形界面
 import time               # 休眠
 import windnd             # 文件拖动
 import winreg             # 读取注册表
 from urllib  import request,parse
 from pathlib import Path  # 获取当前目录
-from tkinter import *     # 图形界面
-from tkinter.ttk import *
+from tkinter import messagebox # 弹窗
+from tkinter import ttk 
+from tkinter import filedialog # 选择文件对话框
 from PIL import ImageGrab # 读取剪切板
 
 #  全局变量
@@ -52,6 +51,10 @@ OCR_SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
 TTS_APP_ID = "19685928"
 TTS_API_KEY = "qk3y9G2FQLrQsCa9v9NzzW8h"
 TTS_SECRET_KEY = "qtYsvvdEGgQ6EzxVSFuYRvl8NmzVihy1"
+
+# 文本纠错Key
+TextErrCorr_API_KEY="O26bQOVrdh4SOeLeogaDCel3"
+TextErrCorr_SECRET_KEY="EGiBPCkZtG4S0u8QlpCZUYiIfGCYhwji"
 
 # 翻译Key（可以去百度翻译开放平台（https://api.fanyi.baidu.com/product/11）申请key）
 TRAN_APP_ID = "20200424000429104"
@@ -442,7 +445,7 @@ class  OCR:
 
             return "已下载到当前文件夹（文件路径：" + filePath + "）"
 
-        except Exception as e:
+        except:
             return "未下载到当前文件夹"
 
     def TableIdent(self,filePath):
@@ -705,100 +708,101 @@ class GUI:
         # 设置窗口的宽高为固定（不能改变大小）
         self.root.resizable(0,0)
         self.top = self.root.winfo_toplevel()
-        self.style = Style()
+        self.style = ttk.Style()
 
         # 右键菜单
-        self.menubar = Menu(self.root, tearoff=False)
+        self.menubar = tk.Menu(self.root, tearoff=False)
 
         # 发音语速滑动条
-        self.Slider1 = Scale(self.top, orient='horizontal', from_=0, to=15)
+        self.Slider1 = ttk.Scale(self.top, orient='horizontal', from_=0, to=15)
         self.Slider1.place(relx=0.472, rely=0.210, relwidth=0.118, relheight=0.098)
         self.Slider1.set(5)
         create_Tip(self.Slider1,"设置语音合成发音语速")
 
         # 音量滑动条
-        self.Slider2 = Scale(self.top, orient='horizontal', from_=0, to=15)
+        self.Slider2 = ttk.Scale(self.top, orient='horizontal', from_=0, to=15)
         self.Slider2.place(relx=0.660, rely=0.212, relwidth=0.118, relheight=0.098)
         self.Slider2.set(7)
         create_Tip(self.Slider2,"设置语音合成发音音量")
 
         # 识别文字时是否检测图片朝向
-        self.CheckBox1Var = StringVar(value='1')
+        self.CheckBox1Var = tk.StringVar(value='1')
         self.style.configure('Check1.TCheckbutton',font=('微软雅黑',10))
-        self.CheckBox1 = Checkbutton(self.top, text='检测图片朝向', variable=self.CheckBox1Var, style='Check1.TCheckbutton')
+        self.CheckBox1 = ttk.Checkbutton(self.top, text='检测图片朝向', variable=self.CheckBox1Var, style='Check1.TCheckbutton')
         self.CheckBox1.place(relx=0.246, rely=0.215, relwidth=0.17, relheight=0.074)
 
         # 选择要识别的图片中的语言
         self.ComboBox1_lang_List = ['中英文混合','英文','葡萄牙语','法语','德语','意大利语','西班牙语','俄语','日语','韩语']
-        self.ComboBox1_lang = Combobox(self.top, state='readonly', values=self.ComboBox1_lang_List, font=('微软雅黑',10))
+        self.ComboBox1_lang = ttk.Combobox(self.top, state='readonly', values=self.ComboBox1_lang_List, font=('微软雅黑',10))
         self.ComboBox1_lang.place(relx=0.013, rely=0.215, relwidth=0.12, relheight=0.08)
         self.ComboBox1_lang.set(self.ComboBox1_lang_List[0])
         create_Tip(self.ComboBox1_lang,"选择要识别的图片中的语言")
 
         # 选择身份证正反面
         self.ComboBox2List = ['照片面','国徽面']
-        self.ComboBox2 = Combobox(self.top, state='readonly',values=self.ComboBox2List, font=('微软雅黑',10))
+        self.ComboBox2 = ttk.Combobox(self.top, state='readonly',values=self.ComboBox2List, font=('微软雅黑',10))
         self.ComboBox2.place(relx=0.14, rely=0.215, relwidth=0.10, relheight=0.08) 
         self.ComboBox2.set(self.ComboBox2List[0])
         create_Tip(self.ComboBox2,"身份证识别时选择照片面或国徽面")
 
         # 发音人
         self.ComboBox3_informant_List = ['度小宇','度小美','度逍遥','度丫丫']
-        self.ComboBox3_informant = Combobox(self.top, state='readonly', values=self.ComboBox3_informant_List, font=('微软雅黑',10))
+        self.ComboBox3_informant = ttk.Combobox(self.top, state='readonly', values=self.ComboBox3_informant_List, font=('微软雅黑',10))
         self.ComboBox3_informant.place(relx=0.785, rely=0.215, relwidth=0.1, relheight=0.08)
         self.ComboBox3_informant.set(self.ComboBox3_informant_List[0])
         create_Tip(self.ComboBox3_informant,"选择语音合成发音人")
 
         # 默认选中第一个单选框
-        self.RadioVar = IntVar()   
+        self.RadioVar = tk.IntVar()   
         self.RadioVar.set(1)
 
         # 通用文字识别单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton1 = Radiobutton(self.top, text='通用文字识别', variable=self.RadioVar, value=1, style='Option1.TRadiobutton')
+        self.RadioButton1 = ttk.Radiobutton(self.top, text='通用文字识别', variable=self.RadioVar, value=1, style='Option1.TRadiobutton')
         self.RadioButton1.place(relx=0.010, rely=0.120, relwidth=0.157, relheight=0.074)
 
         # 通用文字识别（高精度版）单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton2 = Radiobutton(self.top, text='通用文字识别（高精度版）',variable=self.RadioVar, value=2, style='Option1.TRadiobutton')
+        self.RadioButton2 = ttk.Radiobutton(self.top, text='通用文字识别（高精度版）',variable=self.RadioVar, value=2, style='Option1.TRadiobutton')
         self.RadioButton2.place(relx=0.167, rely=0.120, relwidth=0.273, relheight=0.074)
 
         # 手写文字识别单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton3 = Radiobutton(self.top, text='手写文字识别',variable=self.RadioVar, value=3, style='Option1.TRadiobutton')
+        self.RadioButton3 = ttk.Radiobutton(self.top, text='手写文字识别',variable=self.RadioVar, value=3, style='Option1.TRadiobutton')
         self.RadioButton3.place(relx=0.432, rely=0.120, relwidth=0.157, relheight=0.074)
 
         # 身份证识别单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton4 = Radiobutton(self.top, text='身份证识别',variable=self.RadioVar, value=4, style='Option1.TRadiobutton')
+        self.RadioButton4 = ttk.Radiobutton(self.top, text='身份证识别',variable=self.RadioVar, value=4, style='Option1.TRadiobutton')
         self.RadioButton4.place(relx=0.59, rely=0.120, relwidth=0.157, relheight=0.074)
 
         # 数字识别单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton5 = Radiobutton(self.top, text='数字识别',variable=self.RadioVar, value=5, style='Option1.TRadiobutton')
+        self.RadioButton5 = ttk.Radiobutton(self.top, text='数字识别',variable=self.RadioVar, value=5, style='Option1.TRadiobutton')
         self.RadioButton5.place(relx=0.73, rely=0.120, relwidth=0.131, relheight=0.074)
 
         # 表格识别单选按钮
         self.style.configure('Option1.TRadiobutton',font=('微软雅黑',9))
-        self.RadioButton5 = Radiobutton(self.top, text='表格文字识别',variable=self.RadioVar, value=6, style='Option1.TRadiobutton')
+        self.RadioButton5 = ttk.Radiobutton(self.top, text='表格文字识别',variable=self.RadioVar, value=6, style='Option1.TRadiobutton')
         self.RadioButton5.place(relx=0.847, rely=0.120, relwidth=0.157, relheight=0.074)
 
         # 选择按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.Button2_SelectImage = Button(self.top, text='选择', command=Command_SelectImage, style='Command1.TButton')
+        self.Button2_SelectImage = ttk.Button(self.top, text='选择', command=Command_SelectImage, style='Command1.TButton')
         self.Button2_SelectImage.place(relx=0.7, rely=0.021, relwidth=0.07, relheight=0.08)
         create_Tip(self.Button2_SelectImage,"选择图片路径")
 
         # 识别按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.Button1_Start = Button(self.top, text='识别', command=Command_OCR, style='Command1.TButton')
+        self.Button1_Start = ttk.Button(self.top, text='识别', command=Command_OCR,style='Command1.TButton')
         self.Button1_Start.place(relx=0.783, rely=0.021, relwidth=0.07, relheight=0.08)
+        # 绑定键盘事件
         self.Button1_Start.bind_all("<Control-Shift-V>",lambda x:PastePictureAndOCR(x))
-        create_Tip(self.Button1_Start,"识别图片中的文字")
+        create_Tip(self.Button1_Start,"左键识别图片中的文字")
 
         # 翻译按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.Button5_Translate = Button(self.top, text='翻译', style='Command1.TButton')
+        self.Button5_Translate = ttk.Button(self.top, text='翻译', style='Command1.TButton')
         self.Button5_Translate.place(relx=0.855, rely=0.021, relwidth=0.07, relheight=0.08)
         # 绑定鼠标右键事件
         self.Button5_Translate.bind("<Button-3>", lambda x: Translate_event(x))
@@ -810,7 +814,7 @@ class GUI:
 
         # 截图按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.Button6_Screen = Button(self.top, text='截图', style='Command1.TButton')
+        self.Button6_Screen = ttk.Button(self.top, text='截图', style='Command1.TButton')
         self.Button6_Screen.place(relx=0.927, rely=0.021, relwidth=0.07, relheight=0.08)
         # 绑定鼠标右键事件
         self.Button6_Screen.bind("<Button-3>", lambda x: Screen(x))
@@ -823,46 +827,47 @@ class GUI:
 
         # 语音合成按钮
         self.style.configure('Command1.TButton',font=('微软雅黑',9))
-        self.button4_Speech = Button(self.top, text='语音合成', command=Command_Speech,style='Command1.TButton')
+        self.button4_Speech = ttk.Button(self.top, text='语音合成', command=Command_Speech,style='Command1.TButton')
         self.button4_Speech.place(relx=0.89, rely=0.215, relwidth=0.105, relheight=0.082)
         create_Tip(self.button4_Speech,"将文字合成为语音\n单击可发音\n再单击停止发音")
 
         # 显示图片的路径
-        self.Entry1_showPath_Var = StringVar(value='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径')
-        self.Entry1_showPath = Entry(self.top, text='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
+        self.Entry1_showPath_Var = tk.StringVar(value='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径')
+        self.Entry1_showPath = ttk.Entry(self.top, text='请点击“选择”按钮、拖动图片到此、粘贴剪切板图片获取图片路径', textvariable=self.Entry1_showPath_Var, font=('微软雅黑',9))
         self.Entry1_showPath.place(relx=0.115, rely=0.024, relwidth=0.585, relheight=0.074)
         # 绑定鼠标右键事件
         self.Entry1_showPath.bind("<Button-3>", lambda x: Entry1_MouseRightKey(x, self.Entry1_showPath)) 
         self.Entry1_showPath.bind("<Control-v>",lambda x: SaveClipImage())
 
         # 显示识别后的结果
-        self.Text1_showResult = Text(self.top, font=('微软雅黑',10), undo = True)
+        self.Text1_showResult = tk.Text(self.top, font=('微软雅黑',10), undo = True)
         self.Text1_showResult.place(relx=0, rely=0.32, relwidth=0.985, relheight=0.683)
         # 绑定鼠标右键事件
         self.Text1_showResult.bind("<Button-3>", lambda x: Text_MouseRightKey(x, self.Text1_showResult)) 
         self.Text1_showResult.bind("<Control-v>", lambda x: SaveClipImage())
 
         # text控件滚动条
-        self.Slider3_scroll = tkinter.Scrollbar()
+        self.Slider3_scroll = ttk.Scrollbar()
         self.Slider3_scroll.place(relx=0.985, rely=0.357, relwidth=0.10, relheight=0.683)
         # 关联到Text1_showResult控件
         self.Slider3_scroll.config(command=self.Text1_showResult.yview)
         self.Text1_showResult.config(yscrollcommand=self.Slider3_scroll.set)
 
         self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-        self.Label1 = Label(self.top, text='语速：', style='Label1.TLabel')
+        self.Label1 = ttk.Label(self.top, text='语速：', style='Label1.TLabel')
         self.Label1.place(relx=0.408, rely=0.250, relwidth=0.066, relheight=0.051)
 
         self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-        self.Label2 = Label(self.top, text='音量：', style='Label1.TLabel')
+        self.Label2 = ttk.Label(self.top, text='音量：', style='Label1.TLabel')
         self.Label2.place(relx=0.595, rely=0.250, relwidth=0.066, relheight=0.051)
 
         self.style.configure('Label1.TLabel',anchor='w', font=('微软雅黑',9))
-        self.Label3 = Label(self.top, text='图片路径：', style='Label1.TLabel')
+        self.Label3 = ttk.Label(self.top, text='图片路径：', style='Label1.TLabel')
         self.Label3.place(relx=0.010, rely=0.026, relwidth=0.105, relheight=0.07)
 
 
 class SelectionArea:
+    """截图类的辅助类"""
     def __init__(self, canvas: tk.Canvas):
         self.canvas = canvas
 
@@ -1050,8 +1055,6 @@ def Translate(Text,From,To,Salt):
 
 # 根据触发的此事件的快捷键 选择翻译时的源语言和目标语言
 def Translate_event(event):
-    # From 源语言，To 目标语言
-    From,To = '',''
     salt = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M%S')
 
     # 如果为鼠标事件，则通过判断是鼠标左键还是右键触发此事件，来选择翻译源语言和目标语言
@@ -1067,7 +1070,7 @@ def Translate_event(event):
             if (not IsEmpty(gui.Entry1_showPath_Var.get())) and os.path.exists(gui.Entry1_showPath_Var.get()): # 如果图片路径不为空并且路径有效
                     Command_OCR() # 先文字识别再翻译
             else:                 # 如果Text控件为空和图片路径为空或路径无效
-                gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片中的文字，\
+                gui.Text1_showResult.insert(tk.INSERT,"请点击“识别”按钮识别图片中的文字，\
                 或在此处输入要翻译的文字后，点击“翻译”按钮（鼠标左键单击按钮英译中，鼠标右键单击按钮中译英，\
                 CTRL+SHIFT+E识别剪切板中的图片并英译中，CTRL+SHIFT+C识别剪切板中的图片并中译英）。") # 向Text控件插入提示内容
 
@@ -1091,7 +1094,7 @@ def Translate_event(event):
     # 调用百度api翻译文字
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
     if not IsEmpty(result):
-        gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
+        gui.Text1_showResult.insert(tk.END,'\n' + result)# 追加到末尾
 
 
 # 截图
@@ -1115,8 +1118,8 @@ def Screen(event):
 
     # 将保存的图片路径显示到Entry1_showPath
     if gui.Entry1_showPath_Var.get() != "":
-        gui.Entry1_showPath.delete('0', tkinter.END)
-    gui.Entry1_showPath.insert(INSERT, pictureName)
+        gui.Entry1_showPath.delete('0', tk.END)
+    gui.Entry1_showPath.insert(tk.INSERT, pictureName)
      # 文字识别
     Command_OCR()
 
@@ -1136,11 +1139,11 @@ def Screen(event):
 
     result = Translate(gui.Text1_showResult.get('0.0', 'end').rstrip('\n'),From,to,salt)   
     if not IsEmpty(result):
-        gui.Text1_showResult.insert(END,'\n' + result)# 追加到末尾
+        gui.Text1_showResult.insert(tk.END,'\n' + result)# 追加到末尾
 
 
 # 创建一个新线程，用于语音合成
-def CreateThread(text):
+def CreateTTSThread(text):
     global g_speechThread
 
     g_speechThread = threading.Thread(target=tts.Speech, args=(text.rstrip('\n'),gui.Slider2.get(),tts.InformantToNumber(gui.ComboBox3_informant.get()),gui.Slider1.get(),gui.button4_Speech))
@@ -1156,13 +1159,12 @@ def Command_Speech():
 
     # 如果要合成语音的内容为空
     if IsEmpty(gui.Text1_showResult.get('0.0', 'end').rstrip('\n')):
-        gui.Text1_showResult.insert(INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n\
-使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。\n4、单击“语音合成”按钮可停止发音。") # 向Text控件插入提示内容
+        gui.Text1_showResult.insert(tk.INSERT,"请点击“识别”按钮识别图片文字，或在此处输入要合成语音的文字后，点击“语音合成”按钮。\n使用说明：\n1、语速滑动条可调节语音合成发音语速。\n2、音量滑动条可调节语音合成发音音量。\n3、“语音合成”按钮左边的下拉列表可选择语音合成发音人。\n4、单击“语音合成”按钮可停止发音。") # 向Text控件插入提示内容
         #return
 
     winsound.PlaySound(g_playSound, winsound.SND_PURGE)
     if not g_playMusic:
-        CreateThread(gui.Text1_showResult.get('0.0', tkinter.END))
+        CreateTTSThread(gui.Text1_showResult.get('0.0', tk.END))
     else:
         # 终止线程
         winsound.PlaySound(g_playSound, winsound.SND_PURGE)
@@ -1223,8 +1225,8 @@ def Command_OCR():
 
     # 将识别的内容显示到text控件
     if gui.Text1_showResult.get('0.0', 'end') != "":     # 如果Text控件不为空
-        gui.Text1_showResult.delete('0.0',tkinter.END)   # 清空Text控件
-    gui.Text1_showResult.insert(INSERT,re)   # 向Text控件插入内容
+        gui.Text1_showResult.delete('0.0',tk.END)   # 清空Text控件
+    gui.Text1_showResult.insert(tk.INSERT,re)   # 向Text控件插入内容
 
 
 # 选择图片路径
@@ -1232,19 +1234,19 @@ def Command_SelectImage():
         "选择图片文件"
 
         # 打开文件对话框
-        fileName = tkinter.filedialog.askopenfilename(filetypes=[("jpg、png、bmp、webp、jpeg、tiff、pnm","*.jpg;*.png;*.bmp;*.webp;*.jpeg;*.tiff;*.pnm")])
+        fileName = filedialog.askopenfilename(filetypes=[("jpg、png、bmp、webp、jpeg、tiff、pnm","*.jpg;*.png;*.bmp;*.webp;*.jpeg;*.tiff;*.pnm")])
         if fileName == "" or fileName == None: # 如果未选择文件
             return 
         # 否则将选择的图片路径显示到Text_showResult控件
         if gui.Entry1_showPath_Var.get() != "":
-            gui.Entry1_showPath.delete('0',tkinter.END)
-        gui.Entry1_showPath.insert(INSERT,fileName)
+            gui.Entry1_showPath.delete('0',tk.END)
+        gui.Entry1_showPath.insert(tk.INSERT,fileName)
 
 
 # 撤销
 def Undo(editor, event=None):
     # 如果还剩一个字符，则返回
-    if len(editor.get('0.0', tkinter.END).rstrip('\n')) <= 1: 
+    if len(editor.get('0.0', tk.END).rstrip('\n')) <= 1: 
         return
     editor.edit_undo()
 
@@ -1281,25 +1283,75 @@ def SpeechSelectCont(editor, event=None):
             g_playMusic = False
             g_speechThread.join(0)
         # 文字转语音
-        CreateThread(selectText)
+        CreateTTSThread(selectText)
     except:
         pass
 
 
+
+def Get_TextErrCorr_AccessToken():
+    "获取文本纠错AccessToken"
+    host = 'https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id=' + \
+    TextErrCorr_API_KEY + '&client_secret=' + TextErrCorr_SECRET_KEY
+    r = requests.get(host).json()
+    result = r.get("access_token")
+    if IsEmpty(result):
+        messagebox.showerror("OCR文字识别","获取文本纠错Token失败！\n原因：" + r.get("error_description"))
+        return None
+    else:
+        return result
+
+
+# 文本纠错
+def TextCorrection(editor, event=None):
+    try:
+        selectText = gui.Text1_showResult.selection_get()
+        #如果Text为空
+        if IsEmpty(selectText):
+            return
+
+        # 获取AccessToken
+        text_access_token = Get_TextErrCorr_AccessToken()
+        if IsEmpty(text_access_token):
+            return
+             
+        request_url = 'https://aip.baidubce.com/rpc/2.0/nlp/v1/ecnet'
+        params={'text':selectText}
+        params = json.dumps(params).encode('utf-8')
+        request_url = request_url + "?charset=UTF-8&&access_token=" + text_access_token
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(request_url,data=params,headers=headers)
+        if response:
+            r = response.json()
+            # 如果返回的json数据有“error_msg”
+            if r.get("error_msg") != None:
+                raise Exception(r.get("error_msg"))
+
+            retval = messagebox.askyesno("OCR文字识别","是否将：\n"+r.get("text")+"\n替换为：\n"+r.get("item")['correct_query'])
+            if retval:
+                # 删除选中文本区域的第一个字符到选中文本区域的最后一个字符
+                gui.Text1_showResult.delete(tk.SEL_FIRST,tk.SEL_LAST)
+                gui.Text1_showResult.insert(tk.CURRENT,r.get("item")['correct_query'])
+
+    except Exception as e:
+        messagebox.showerror("文本纠错失败", e.args[0])
+
+
 # 鼠标右键菜单栏
 def Text_MouseRightKey(event, editor):
-    gui.menubar.delete('0',tkinter.END)
+    gui.menubar.delete('0',tk.END)
     gui.menubar.add_command(label='剪切',command=lambda:Cut(editor))
     gui.menubar.add_command(label='复制',command=lambda:Copy(editor))
     gui.menubar.add_command(label='粘贴',command=lambda:Paste(editor))
     gui.menubar.add_command(label='撤销',command=lambda:Undo(editor))
     gui.menubar.add_command(label='恢复',command=lambda:Redo(editor))
-    gui.menubar.add_command(label='朗读选择项',command=lambda:SpeechSelectCont(editor))
+    gui.menubar.add_command(label='朗读选择的文本',command=lambda:SpeechSelectCont(editor))
+    gui.menubar.add_command(label='对选择的文本纠错',command=lambda:TextCorrection(editor))
     gui.menubar.post(event.x_root,event.y_root)
 
 # 鼠标右键菜单栏
 def Entry1_MouseRightKey(event, editor):
-    gui.menubar.delete(0,tkinter.END)
+    gui.menubar.delete(0,tk.END)
     gui.menubar.add_command(label='剪切',command=lambda:Cut(editor))
     gui.menubar.add_command(label='复制',command=lambda:Copy(editor))
     gui.menubar.add_command(label='粘贴',command=lambda:Paste(editor))
@@ -1319,8 +1371,8 @@ def SaveClipImage():
     print(pictureName)
     # 将保存的图片路径显示到Entry1_showPath
     if gui.Entry1_showPath_Var.get() != "":
-        gui.Entry1_showPath.delete('0', tkinter.END)
-    gui.Entry1_showPath.insert(INSERT, pictureName)
+        gui.Entry1_showPath.delete('0', tk.END)
+    gui.Entry1_showPath.insert(tk.INSERT, pictureName)
     return pictureName
 
 
@@ -1328,8 +1380,8 @@ def SaveClipImage():
 def DragFile(files):
     # 将选择的图片路径显示到Text_showResult控件
     if gui.Entry1_showPath_Var.get() != "":
-        gui.Entry1_showPath.delete('0',tkinter.END)
-    gui.Entry1_showPath.insert(INSERT,files[0].decode('ANSI'))# 使用ansi是为了避免本地化问题，导致乱码
+        gui.Entry1_showPath.delete('0',tk.END)
+    gui.Entry1_showPath.insert(tk.INSERT,files[0].decode('ANSI'))# 使用ansi是为了避免本地化问题，导致乱码
 
 
 # 第一次使用时显示欢迎窗口
