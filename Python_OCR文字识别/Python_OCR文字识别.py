@@ -44,21 +44,21 @@ g_speechThread = threading.Thread()
 
 
 # 文字识别Key（可以去百度ai开放平台（https://ai.baidu.com/tech/ocr/general）申请key）
-OCR_API_KEY = "YaOhBFsug5GySthCpUFtLkQk"
-OCR_SECRET_KEY = "mqP7OOO9t0h9GvipdQe1weRld3SGQokV"
+OCR_API_KEY = ""
+OCR_SECRET_KEY = ""
 
 # 语音合成Key（可以去百度ai开放平台（https://ai.baidu.com/tech/speech/tts_online）申请key）
-TTS_APP_ID = "19685928"
-TTS_API_KEY = "qk3y9G2FQLrQsCa9v9NzzW8h"
-TTS_SECRET_KEY = "qtYsvvdEGgQ6EzxVSFuYRvl8NmzVihy1"
+TTS_APP_ID = ""
+TTS_API_KEY = ""
+TTS_SECRET_KEY = ""
 
 # 文本纠错Key
-TextErrCorr_API_KEY="O26bQOVrdh4SOeLeogaDCel3"
-TextErrCorr_SECRET_KEY="EGiBPCkZtG4S0u8QlpCZUYiIfGCYhwji"
+TextErrCorr_API_KEY=""
+TextErrCorr_SECRET_KEY=""
 
 # 翻译Key（可以去百度翻译开放平台（https://api.fanyi.baidu.com/product/11）申请key）
-TRAN_APP_ID = "20200424000429104"
-TRAN_KEY = "5mzyraBsLRk2yfGQMhXJ"
+TRAN_APP_ID = ""
+TRAN_KEY = ""
 
 def IsEmpty(Str):
     " 如果字符串的值是None或""，则返回true "
