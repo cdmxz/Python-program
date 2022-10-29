@@ -1,4 +1,4 @@
 ## OCR文字识别
 本软件是文字识别软件（可以从图片中提取文字并将提取出来的文字转为语音）。由于接入了百度api，故识别准确率较高，且具有通用文字识别、手写文字识别、身份证识别、数字识别、表格文字识别、语音合成（只支持中英文）及翻译（只支持中译英和英译中）功能。
 
-![OCR文字识别](https://gitee.com/fuhohua/Web/raw/master/image/Python_OCR%E6%96%87%E5%AD%97%E8%AF%86%E5%88%AB.png)
+![OCR文字识别](https://raw.githubusercontent.com/cdmxz/cdmxz.github.io/master/2022/06/28/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E4%B8%8B%E8%BD%BD/Python_OCR%E6%96%87%E5%AD%97%E8%AF%86%E5%88%AB.png)
