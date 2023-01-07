@@ -10,4 +10,4 @@
 
 ## GUI界面
 
-![](F:\git\Python-program\Python_OCR文字识别\Python_OCR文字识别.png)
+![](Python_OCR文字识别.png)
